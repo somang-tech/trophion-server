@@ -3,10 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cookieSession from 'cookie-session';
+import geoip from 'geoip-lite';
 import { authRouter } from './routes/auth.js';
 import { gamesRouter } from './routes/games.js';
 import { trophiesRouter } from './routes/trophies.js';
 import { shareRouter } from './routes/share.js';
+import { localeFromCountry } from './locale.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -25,6 +27,15 @@ app.use('/auth', authRouter);
 app.use('/api/games', gamesRouter);
 app.use('/api/trophies', trophiesRouter);
 app.use('/u', shareRouter); // 공개 프로필 + 공유용 PNG
+
+// 로그인 전(게이트 화면)에는 Steam 국가 정보가 없으니, 접속 IP로 국가를 추정해 언어를 고른다.
+// Railway/대부분의 PaaS는 프록시 뒤에 있으므로 X-Forwarded-For를 먼저 본다.
+app.get('/api/locale', (req, res) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = (forwarded ? forwarded.split(',')[0].trim() : null) || req.socket.remoteAddress;
+  const geo = ip ? geoip.lookup(ip) : null;
+  res.json({ locale: localeFromCountry(geo?.country), country: geo?.country || null });
+});
 
 // public/index.html이 실제 동작하는 프론트엔드 — 로그인 게이트, 게임 목록, 업적,
 // ★ 픽까지 전부 위 API를 fetch로 호출해서 그린다 (data/trophion.html의 가짜 배열이 아니라 진짜 데이터).

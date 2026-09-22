@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { buildLoginUrl, verifyCallback } from '../steamAuth.js';
 import { getPlayerSummary } from '../steamApi.js';
+import { localeFromCountry } from '../locale.js';
 
 export const authRouter = Router();
 
@@ -21,6 +22,7 @@ authRouter.get('/steam/callback', async (req, res) => {
     let displayName = `player_${steamId64.slice(-6)}`;
     let avatarUrl = null;
     let profileUrl = null;
+    let locCountryCode = null;
 
     if (apiKey) {
       const summary = await getPlayerSummary(steamId64, apiKey);
@@ -28,13 +30,15 @@ authRouter.get('/steam/callback', async (req, res) => {
         displayName = summary.personaname || displayName;
         avatarUrl = summary.avatarfull || null;
         profileUrl = summary.profileurl || null;
+        // Steam이 클라이언트 언어를 직접 주진 않아서, 대신 등록된 국가로 언어를 추정한다.
+        locCountryCode = summary.loccountrycode || null;
       }
     }
 
     const user = await prisma.user.upsert({
       where: { steamId64 },
-      update: { displayName, avatarUrl, profileUrl },
-      create: { steamId64, displayName, avatarUrl, profileUrl }
+      update: { displayName, avatarUrl, profileUrl, locCountryCode },
+      create: { steamId64, displayName, avatarUrl, profileUrl, locCountryCode }
     });
 
     req.session.userId = user.id;
@@ -62,7 +66,8 @@ authRouter.get('/me', async (req, res) => {
       displayName: user.displayName,
       avatarUrl: user.avatarUrl,
       profileUrl: user.profileUrl,
-      lastSyncAt: user.lastSyncAt
+      lastSyncAt: user.lastSyncAt,
+      locale: localeFromCountry(user.locCountryCode) // 'ko' | 'ja' | 'en'
     }
   });
 });

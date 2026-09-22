@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -17,6 +17,7 @@ model User {
   displayName String
   avatarUrl   String?
   profileUrl  String?
+  locCountryCode String? // Steam GetPlayerSummaries의 loccountrycode — UI/업적 언어를 고르는 근거
   createdAt   DateTime  @default(now())
   lastSyncAt  DateTime?
 

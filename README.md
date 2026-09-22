@@ -93,6 +93,49 @@ CSS는 데모(`trophion.html`)의 CSS를 그대로 가져오고 데이터 소스
 `skippedPrivateStats` 배열에 건너뛴 게임 이름을 모아 돌려준다 — 프론트에서 "이 게임들은
 업적 정보가 비공개라 제외됐어요" 같은 안내에 쓰면 된다.
 
+## 다국어(i18n) — 로그인한 Steam 유저 언어 / IP 지역 자동 감지
+
+`public/index.html`의 모든 UI 문구는 `I18N = { ko, en, ja }` 딕셔너리 + `t(key)` 헬퍼로 통일
+되어 있다. 언어 결정 순서:
+
+1. **로그인 후** → Steam 로그인 콜백(`/auth/steam/callback`)에서 `GetPlayerSummaries`가 주는
+   `loccountrycode`(예: `KR`, `JP`, `US`)를 `User.locCountryCode`에 저장 → `GET /auth/me`가
+   `locale: localeFromCountry(user.locCountryCode)`를 함께 내려준다.
+2. **로그인 전(게이트 화면)** → Steam 국가 정보가 아직 없으므로, 서버가 접속 IP를
+   `geoip-lite`(오프라인 DB, 런타임에 외부 호출 없음)로 조회해서 `GET /api/locale`이
+   `{ locale, country }`를 내려준다. Railway 같은 프록시 뒤 환경을 고려해 `X-Forwarded-For`를
+   우선 본다.
+3. 국가 코드 → 언어 매핑은 `src/locale.js`의 `COUNTRY_TO_LOCALE`(`KR→ko`, `JP→ja`, 그 외 `en`)
+   하나로 관리되며, 같은 파일의 `steamLangForLocale()`이 Steam Web API 호출용 언어 코드
+   (`koreana`/`japanese`/`english`)로도 변환해준다 — 그래서 업적 이름/설명 자체도
+   `GetPlayerAchievements`/`GetSchemaForGame` 호출 시 유저 언어로 받아온다
+   (`src/steamApi.js`의 `lang` 파라미터, `src/routes/games.js`의 `sync`에서 사용).
+
+**스키마 변경**: `User.locCountryCode String?` 컬럼이 추가됐다. 로컬에서는
+`npx prisma migrate dev --name add_locale`로 마이그레이션을 만들어 커밋하면 되고, Railway
+배포는 `start` 스크립트가 이미 `prisma migrate deploy`를 실행하므로 push만 하면 자동 반영된다.
+`package.json`에 `geoip-lite` 의존성이 새로 추가됐으니, 배포 시 재설치(`npm install`)가
+자동으로 한 번 더 일어난다.
+
+## 최근 반영된 UI 수정 (실사이트 ↔ 아티팩트 데모 최종 정합)
+
+- Steam 안내 문구("Steam 프로필/게임 세부정보가 공개로 설정되어 있어야...")가 정확히 2줄로
+  고정 렌더링되도록 마크업을 `<div>` 두 개 + `white-space:nowrap`으로 재구성.
+- "이미지로 공유" 버튼 → 실제로 동작하는 **"이미지 다운로드"** 버튼으로 교체. 서버가 이미
+  갖고 있던 `/u/:steamId64/:appId.png`(공유 카드 PNG 렌더러, `src/shareCard.js`)를 그대로
+  재사용해서 `<a download>` 클릭을 합성하는 방식이라 별도 클라이언트 캔버스 로직이 없다.
+- 트로피 템플릿 우측 상단의 "TROPHY TEMPLATE" 텍스트 → 헤더 좌측과 동일한 TROPHION
+  브랜드 마크 SVG + 워드마크(`.brand-mini`)로 교체.
+- 금/은/동 시상대를 원형 메달 → **트로피 컵 모양**으로 교체 (`bigTrophySvg()`, 프론트/서버
+  양쪽 다 동일한 모양: `src/shareCard.js`의 `drawTrophy()`가 다운로드 PNG에서도 같은 컵을
+  그린다). 획득 업적 랙(rack)의 작은 메달은 기존 원형 유지.
+- 템플릿 하단의 "X/3 자리 채움" 문구 제거 — 다운로드 버튼만 남김.
+- 사이드바 게임 커버 이미지가 없는 항목(삭제/미출시 게임 등 Steam CDN에 `header.jpg`가 없는
+  경우)은 빈 박스 대신 게임 이름 첫 글자 + 해시 기반 그라데이션 배경의 대체 박스로 표시
+  (`hashHue`/`onCoverError`/`wireCoverFallbacks`).
+- 우측 상단 유저네임 버튼 클릭 시 바로 로그아웃되던 것 → "로그아웃 하시겠습니까?"
+  확인 모달("예"/"아니오") 경유하도록 변경.
+
 ## 다음으로 손볼만한 것들
 
 - **레이트리밋 & 재시도**: Steam Web API가 가끔 429/timeout을 준다. `sync` 라우트에 재시도·
@@ -100,6 +143,6 @@ CSS는 데모(`trophion.html`)의 CSS를 그대로 가져오고 데이터 소스
 - **다중 게임 요약 카드**: 지금 공유 카드는 게임 하나 기준(`/u/:steamId64/:appId.png`)이다.
   "이 유저의 전체 라이브러리에서 가장 자랑스러운 3개"를 보여주는 글로벌 카드도 원하면
   `TrophyPick`에 `appId: null`인 별도 슬롯 세트를 추가하는 식으로 확장하면 된다.
-- **public/index.html 다듬기**: 지금은 기능 검증용으로 최소한의 스타일만 입혔다. 아티팩트
-  데모(`trophion.html`)의 비스듬한 메달 진열장·트로피 템플릿 비주얼을 그대로 옮기면 실제
-  서비스도 같은 룩앤필이 된다.
+- **업적 아이콘 실사용**: 랙/그리드는 여전히 테마별 SVG 글리프(칼/불꽃/해골 등)를 쓴다.
+  `AchievementCache.iconUrl`에 이미 Steam 실제 아이콘 URL이 저장되고 있으니, 프론트에서
+  `<img>`로 바로 붙이는 것도 어렵지 않다.

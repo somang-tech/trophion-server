@@ -11,6 +11,7 @@ import {
   steamCoverUrl,
   PROFILE_VISIBILITY_PUBLIC
 } from '../steamApi.js';
+import { localeFromCountry, steamLangForLocale } from '../locale.js';
 
 export const gamesRouter = Router();
 
@@ -51,10 +52,13 @@ gamesRouter.post('/sync', requireAuth, async (req, res) => {
     .sort((a, b) => (b.playtime_forever || 0) - (a.playtime_forever || 0))
     .slice(0, SYNC_GAME_LIMIT);
 
+  // 업적 이름/설명을 유저의 추정 언어로 받아온다 (한국이면 한글, 일본이면 일본어, 그 외는 영어).
+  const steamLang = steamLangForLocale(localeFromCountry(user.locCountryCode));
+
   const synced = [];
   const skippedPrivateStats = [];
   for (const g of candidates) {
-    const playerAch = await getPlayerAchievements(user.steamId64, g.appid, apiKey);
+    const playerAch = await getPlayerAchievements(user.steamId64, g.appid, apiKey, steamLang);
     if (playerAch.length === 0) {
       // 이 게임만 업적 통계가 비공개이거나, 애초에 업적을 지원하지 않는 게임이다.
       skippedPrivateStats.push(g.name);
@@ -62,7 +66,7 @@ gamesRouter.post('/sync', requireAuth, async (req, res) => {
     }
 
     const [schema, globalPct] = await Promise.all([
-      getSchemaForGame(g.appid, apiKey),
+      getSchemaForGame(g.appid, apiKey, steamLang),
       getGlobalAchievementPercentages(g.appid)
     ]);
     const schemaByName = Object.fromEntries(schema.map((s) => [s.name, s]));

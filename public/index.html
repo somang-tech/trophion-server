@@ -14,7 +14,7 @@
     --gold:#e8b84b; --gold-dim:#7a6530; --gold-lt:#fff3cf;
     --silver:#c3c9d6; --silver-dim:#5f6472; --silver-lt:#ffffff;
     --bronze:#cd7f4c; --bronze-dim:#6b4a34; --bronze-lt:#ffe1c7;
-    --platinum:#6fe7c9;
+    --platinum:#6fe7c9; --danger:#e0654f;
     --font-display:'Bebas Neue','Oswald',impact,sans-serif;
     --font-body:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Consolas,monospace;
@@ -32,11 +32,14 @@
   .brand-mark{width:30px;height:30px;flex:none;}
   .brand-name{font-family:var(--font-display);font-size:28px;letter-spacing:1.5px;line-height:1;background:linear-gradient(135deg,#fff 10%,var(--gold) 65%);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .brand-tag{font-size:10.5px;color:var(--text-faint);font-family:var(--font-mono);letter-spacing:1.5px;text-transform:uppercase;border-left:1px solid var(--border);padding-left:10px;margin-left:2px;}
+  .brand-mini{display:flex;align-items:center;gap:7px;}
+  .brand-mini .brand-mark{width:20px;height:20px;}
+  .brand-mini .brand-name{font-size:17px;letter-spacing:1px;}
   .top-stats{display:flex;gap:22px;font-family:var(--font-mono);}
   .top-stat{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
   .top-stat b{font-size:16px;font-variant-numeric:tabular-nums;color:var(--text);}
   .top-stat span{font-size:9.5px;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;}
-  .steam-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+  .steam-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
   .steam-row{display:flex;align-items:center;gap:8px;}
   .steam-btn{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:9px 14px 9px 11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s,background .15s;}
   .steam-btn:hover{border-color:var(--gold-dim);background:var(--surface-3);}
@@ -44,14 +47,15 @@
   .ghost-btn{font-family:var(--font-mono);font-size:11.5px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;}
   .ghost-btn:hover{border-color:var(--text-faint);color:var(--text);}
   .ghost-btn[disabled]{opacity:.5;cursor:default;}
-  .steam-note{font-size:9.5px;color:var(--text-faint);font-family:var(--font-mono);letter-spacing:.2px;max-width:260px;text-align:right;line-height:1.4;}
+  .steam-note{font-size:9.5px;color:var(--text-faint);font-family:var(--font-mono);letter-spacing:.2px;text-align:right;line-height:1.5;}
+  .steam-note div{white-space:nowrap;}
   .steam-note b{color:var(--text-dim);}
 
   /* ---------- Login gate ---------- */
   .gate{max-width:520px;margin:100px auto;text-align:center;padding:0 16px;}
   .gate h1{font-family:var(--font-display);font-size:52px;letter-spacing:1.5px;margin:0 0 4px;background:linear-gradient(135deg,#fff 10%,var(--gold) 65%);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .gate p{color:var(--text-dim);font-size:14px;line-height:1.7;}
-  .gate .err{color:#e0654f;margin-top:16px;font-size:13px;}
+  .gate .err{color:var(--danger);margin-top:16px;font-size:13px;}
   .gate .cta{display:inline-flex;align-items:center;gap:8px;margin-top:26px;background:var(--gold);color:#1a1204;font-weight:700;padding:12px 22px;border-radius:10px;font-size:14px;}
 
   /* ---------- Profile hero ---------- */
@@ -82,6 +86,7 @@
   .rank-num{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);width:16px;flex:none;text-align:right;font-variant-numeric:tabular-nums;}
   .rank-item.active .rank-num{color:var(--gold);}
   .rank-cover{width:30px;height:30px;border-radius:6px;flex:none;object-fit:cover;background:var(--surface-3);}
+  .cover-fallback{display:flex;align-items:center;justify-content:center;font-family:var(--font-display);color:#fff;}
   .rank-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
   .rank-info .rn{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .rank-bar-track{height:3px;border-radius:2px;background:var(--surface-3);overflow:hidden;}
@@ -90,7 +95,7 @@
 
   /* ---------- Right: dashboard ---------- */
   .dash-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:1px dashed var(--border);}
-  .dash-cover{width:132px;height:62px;border-radius:10px;flex:none;object-fit:cover;background:var(--surface-2);box-shadow:0 8px 22px -8px rgba(0,0,0,.6);}
+  .dash-cover{width:132px;height:62px;border-radius:10px;flex:none;object-fit:cover;background:var(--surface-2);box-shadow:0 8px 22px -8px rgba(0,0,0,.6);font-size:26px;}
   .dash-meta{display:flex;flex-direction:column;gap:4px;min-width:180px;flex:1;}
   .dash-meta .gt{font-family:var(--font-display);font-size:28px;letter-spacing:.4px;line-height:1;text-wrap:balance;}
   .dash-meta .gd{font-size:12px;color:var(--text-dim);}
@@ -102,18 +107,17 @@
 
   /* 트로피 템플릿 */
   .tpl-card{background:radial-gradient(120% 100% at 50% -10%,#1c2030,var(--bg-2) 55%);border:1px solid var(--border-soft);border-radius:20px;padding:26px 24px 20px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:22px;}
-  .tpl-top{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:8px;}
+  .tpl-top{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:10px;}
   .tpl-user{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);}
-  .tpl-site{font-family:var(--font-display);font-size:14px;letter-spacing:1px;color:var(--gold);}
   .tpl-slot{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;}
   .tpl-gold{width:100%;padding-block:2px 4px;}
-  .tpl-gold .tpl-medal{width:168px;height:193px;transform:rotate(-4deg);}
+  .tpl-gold .tpl-medal{width:168px;height:202px;transform:rotate(-4deg);}
   .tpl-gold .tpl-name{font-size:20px;}
   .tpl-gold .tpl-rarity{font-size:13.5px;}
   .tpl-row2{display:flex;gap:20px;width:100%;margin-top:10px;align-items:flex-end;justify-content:center;}
   .tpl-silver,.tpl-bronze{flex:0 1 180px;min-width:0;}
-  .tpl-silver .tpl-medal{width:108px;height:124px;transform:rotate(6deg);}
-  .tpl-bronze .tpl-medal{width:86px;height:99px;transform:rotate(-8deg);}
+  .tpl-silver .tpl-medal{width:108px;height:130px;transform:rotate(6deg);}
+  .tpl-bronze .tpl-medal{width:86px;height:103px;transform:rotate(-8deg);}
   .tpl-silver .tpl-name{font-size:14px;}
   .tpl-bronze .tpl-name{font-size:12.5px;}
   .tpl-silver .tpl-rarity,.tpl-bronze .tpl-rarity{font-size:11px;}
@@ -125,10 +129,9 @@
   .tpl-slot.empty{opacity:.4;}
   .tpl-slot.empty .tpl-medal{transform:none;}
   .tpl-slot.empty .tpl-name{font-weight:500;color:var(--text-faint);font-family:var(--font-mono);font-size:11px;}
-  .tpl-foot{margin-top:18px;padding-top:14px;border-top:1px dashed var(--border);width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
-  .tpl-foot-stat{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);}
-  .tpl-foot-stat b{color:var(--text-dim);font-variant-numeric:tabular-nums;}
-  .tpl-share{font-family:var(--font-mono);font-size:11px;padding:7px 13px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);}
+  .tpl-foot{margin-top:18px;padding-top:14px;border-top:1px dashed var(--border);width:100%;display:flex;justify-content:flex-end;}
+  .tpl-share{font-family:var(--font-mono);font-size:11.5px;padding:9px 16px;border-radius:8px;border:1px solid var(--gold-dim);background:var(--gold);color:#1a1204;font-weight:700;cursor:pointer;}
+  .tpl-share:hover{filter:brightness(1.06);}
 
   /* 획득한 업적 메달 랙 */
   .rack-section{margin-bottom:26px;}
@@ -171,6 +174,15 @@
 
   .status{font-family:var(--font-mono);font-size:12px;color:var(--text-faint);padding:40px 0;text-align:center;}
   footer.site{text-align:center;padding-block:26px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint);border-top:1px solid var(--border-soft);}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(6,7,11,.65);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;}
+  .modal-box{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:26px 28px;text-align:center;max-width:300px;width:100%;}
+  .modal-box p{margin:0 0 20px;font-size:14.5px;color:var(--text);font-weight:600;}
+  .modal-actions{display:flex;gap:10px;justify-content:center;}
+  .modal-btn{padding:9px 22px;border-radius:8px;font-family:var(--font-mono);font-size:13px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);}
+  .modal-btn.primary{background:var(--danger);border-color:var(--danger);color:#fff;font-weight:700;}
+  .modal-btn:hover{filter:brightness(1.1);}
 </style>
 </head>
 <body>
@@ -187,7 +199,7 @@
         <defs><linearGradient id="g1" x1="4" y1="6" x2="28" y2="28"><stop stop-color="#e8b84b"/><stop offset="1" stop-color="#cd7f4c"/></linearGradient></defs>
       </svg>
       <span class="brand-name">TROPHION</span>
-      <span class="brand-tag">Achievement Showcase</span>
+      <span class="brand-tag">ACHIEVEMENT SHOWCASE</span>
     </div>
     <div class="top-stats" id="topStats">
       <div class="top-stat"><b id="statGames">—</b><span>Games</span></div>
@@ -198,13 +210,86 @@
   </div>
 </header>
 
-<div id="app" class="wrap"><p class="status">불러오는 중…</p></div>
+<div id="app" class="wrap"><p class="status">…</p></div>
 
-<footer class="site">TROPHION — 당신의 게임 여정을 증명하는 트로피 보드</footer>
+<footer class="site" id="footerText"></footer>
 
 <script>
 (function(){
   "use strict";
+
+  /* ============ i18n ============ */
+  var I18N = {
+    ko: {
+      loginBtn:'Steam으로 로그인', syncBtn:'동기화', syncing:'동기화 중…',
+      steamNote1:'Steam 프로필/게임 세부정보가 "공개"로 설정되어 있어야',
+      steamNote2:'업적과 이미지를 불러올 수 있어요',
+      logoutConfirm:'로그아웃 하시겠습니까?', yes:'예', no:'아니오',
+      gateDesc:'Steam으로 로그인하면 보유 게임과 업적을 불러와 금/은/동 트로피케이스를 만들 수 있어요.',
+      heroPerfect:'완벽 클리어', heroTotal:'총 업적 수', heroAvgRarity:'평균 희귀도',
+      rankHeader:'내 게임 랭킹 · 달성도순', rankCount:function(n){return n+'개';},
+      achProgress:function(d,t){return d+'/'+t+' 업적';}, rarityScoreLabel:'Rarity Score',
+      completion:'완료율', tplEmpty:'비어 있음',
+      tplRarity:function(p){return '전세계 '+p+'%만 달성';},
+      downloadBtn:'이미지 다운로드',
+      rackTitle:function(g){return g+'에서 획득한 업적 메달';},
+      rackHint:function(d,t){return d+'/'+t+'개 진열 중';},
+      rackEmpty:'아직 이 게임에서 획득한 업적이 없어요.',
+      achSectionTitle:function(g){return g+' 업적 목록';},
+      achSectionHint:'★ 을 눌러 위 템플릿의 금/은/동 자리를 채워보세요',
+      achAchieved:function(p){return p+'% 달성';},
+      loading:'불러오는 중…',
+      noGames:'아직 동기화된 게임이 없어요. 오른쪽 위 "동기화" 버튼을 눌러주세요.',
+      footer:'TROPHION — 당신의 게임 여정을 증명하는 트로피 보드'
+    },
+    en: {
+      loginBtn:'Sign in with Steam', syncBtn:'Sync', syncing:'Syncing…',
+      steamNote1:'Your Steam profile & game details must be set to "Public"',
+      steamNote2:'to load your achievements and images.',
+      logoutConfirm:'Log out?', yes:'Yes', no:'No',
+      gateDesc:'Sign in with Steam to pull your games and achievements into a gold / silver / bronze trophy case.',
+      heroPerfect:'Perfect Clears', heroTotal:'Total Trophies', heroAvgRarity:'Avg. Rarity',
+      rankHeader:'My Game Ranking · By Completion', rankCount:function(n){return n+(n===1?' game':' games');},
+      achProgress:function(d,t){return d+'/'+t+' achievements';}, rarityScoreLabel:'Rarity Score',
+      completion:'Completion', tplEmpty:'Empty',
+      tplRarity:function(p){return 'Only '+p+'% worldwide';},
+      downloadBtn:'Download Image',
+      rackTitle:function(g){return 'Medals earned in '+g;},
+      rackHint:function(d,t){return d+'/'+t+' on display';},
+      rackEmpty:'No achievements unlocked in this game yet.',
+      achSectionTitle:function(g){return g+' Achievements';},
+      achSectionHint:'Click ★ to fill the gold / silver / bronze slots above',
+      achAchieved:function(p){return p+'% unlocked';},
+      loading:'Loading…',
+      noGames:'No synced games yet. Click "Sync" in the top right.',
+      footer:'TROPHION — the trophy board that proves your gaming journey.'
+    },
+    ja: {
+      loginBtn:'Steamでログイン', syncBtn:'同期', syncing:'同期中…',
+      steamNote1:'Steamプロフィールとゲームの詳細情報が「公開」に設定されている必要があります',
+      steamNote2:'実績と画像を読み込めます。',
+      logoutConfirm:'ログアウトしますか?', yes:'はい', no:'いいえ',
+      gateDesc:'Steamでログインすると、所持ゲームと実績を読み込んで金・銀・銅のトロフィーケースを作れます。',
+      heroPerfect:'完全制覇', heroTotal:'獲得実績数', heroAvgRarity:'平均レア度',
+      rankHeader:'所持ゲームランキング・達成率順', rankCount:function(n){return n+'件';},
+      achProgress:function(d,t){return d+'/'+t+' 実績';}, rarityScoreLabel:'Rarity Score',
+      completion:'達成率', tplEmpty:'空き',
+      tplRarity:function(p){return '世界の'+p+'%のみ達成';},
+      downloadBtn:'画像をダウンロード',
+      rackTitle:function(g){return g+'で獲得した実績メダル';},
+      rackHint:function(d,t){return d+'/'+t+'個展示中';},
+      rackEmpty:'このゲームではまだ実績を獲得していません。',
+      achSectionTitle:function(g){return g+'の実績一覧';},
+      achSectionHint:'★をクリックして上のテンプレートの金・銀・銅の枠を埋めましょう',
+      achAchieved:function(p){return p+'%達成';},
+      loading:'読み込み中…',
+      noGames:'まだ同期されたゲームがありません。右上の「同期」ボタンを押してください。',
+      footer:'TROPHION — あなたのゲーム歴を証明するトロフィーボード。'
+    }
+  };
+  var locale = 'en';
+  function t(key){ var v=(I18N[locale]||I18N.en)[key]; return v===undefined ? (I18N.en[key]||key) : v; }
+
   var TIER = {
     common:   {label:'COMMON',   color:'#9498a8'},
     rare:     {label:'RARE',     color:'var(--silver)'},
@@ -226,8 +311,25 @@
       .then(function(r){ return r.json().then(function(body){ return { ok:r.ok, status:r.status, body:body }; }); });
   }
   function resolveColor(v){ return v.indexOf('var(')===0 ? getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim() : v; }
+  function escAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+  function hashHue(str){ var h=0; str=String(str||'?'); for(var i=0;i<str.length;i++){ h=(h*31+str.charCodeAt(i))>>>0; } return h%360; }
 
-  /* ---- 메달 SVG (데모 아티팩트와 동일한 드로잉) ---- */
+  /* 커버 이미지가 없는 게임(미출시작·appid 불일치 등)은 조용히 숨기지 않고 이니셜 박스로 대체한다. */
+  function onCoverError(imgEl){
+    var name = imgEl.getAttribute('data-name') || '?';
+    var div = document.createElement('div');
+    div.className = imgEl.className + ' cover-fallback';
+    div.style.background = 'linear-gradient(155deg,hsl('+hashHue(name)+',45%,32%),#0a0b10)';
+    div.textContent = name.charAt(0).toUpperCase();
+    imgEl.replaceWith(div);
+  }
+  function wireCoverFallbacks(root){
+    root.querySelectorAll('img.rank-cover,img.dash-cover').forEach(function(img){
+      img.addEventListener('error', function(){ onCoverError(img); }, { once:true });
+    });
+  }
+
+  /* ---- 작은 메달 SVG (업적 랙 / 목록) ---- */
   function medalSvg(tier, locked, size){
     size = size || 36;
     var c = resolveColor(TIER[tier] ? TIER[tier].color : TIER.common.color);
@@ -240,81 +342,103 @@
       '<path d="M22 12l2.5 6.2 6.5.4-5 4.4 1.7 6.3L22 25.9l-5.7 3.4 1.7-6.3-5-4.4 6.5-.4z" fill="'+c+'"/>'+
     '</svg>';
   }
-  function bigMedalSvg(slot, size, empty){
+
+  /* ---- 큰 트로피 컵 SVG (금/은/동 템플릿) ---- */
+  function bigTrophySvg(slot, size, empty){
     var main = empty ? '#3a3f4e' : resolveColor(slot.color);
     var dim  = empty ? '#262a37' : resolveColor(slot.dim);
     var lt   = empty ? '#5c6175' : resolveColor(slot.lt);
-    var gid = 'mg-'+slot.key+(empty?'e':'');
-    var h = Math.round(size*1.15);
-    return '<svg width="'+size+'" height="'+h+'" viewBox="0 0 200 230" aria-hidden="true">'+
-      '<defs><radialGradient id="'+gid+'" cx="35%" cy="32%" r="75%">'+
-        '<stop offset="0" stop-color="'+lt+'"/><stop offset=".45" stop-color="'+main+'"/><stop offset="1" stop-color="'+dim+'"/>'+
-      '</radialGradient></defs>'+
-      '<path d="M80 0 L100 92 L62 92 Z" fill="'+dim+'"/>'+
-      '<path d="M120 0 L100 92 L138 92 Z" fill="'+dim+'" opacity=".85"/>'+
-      '<path d="M90 0 L100 86 L80 86 Z" fill="'+main+'"/>'+
-      '<path d="M110 0 L100 86 L120 86 Z" fill="'+main+'" opacity=".9"/>'+
-      '<circle cx="100" cy="150" r="74" fill="url(#'+gid+')" stroke="'+dim+'" stroke-width="4"/>'+
-      '<circle cx="100" cy="150" r="61" fill="none" stroke="'+lt+'" stroke-width="1.6" opacity=".55"/>'+
-      '<path d="M100 111 l9.7 21.9 23.8 2 -18 16.7 5.4 23.4 -21 -12 -21 12 5.4-23.4 -18-16.7 23.8-2z" fill="'+lt+'" opacity="'+(empty?'.5':'.95')+'"/>'+
-      '<ellipse cx="77" cy="126" rx="13" ry="28" fill="#ffffff" opacity="'+(empty?'.08':'.22')+'"/>'+
+    var gid = 'tg-'+slot.key+(empty?'e':'');
+    var h = Math.round(size*1.2);
+    return '<svg width="'+size+'" height="'+h+'" viewBox="0 0 100 120" aria-hidden="true">'+
+      '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'+
+        '<stop offset="0" stop-color="'+lt+'"/><stop offset=".38" stop-color="'+main+'"/><stop offset="1" stop-color="'+dim+'"/>'+
+      '</linearGradient></defs>'+
+      '<path d="M30 8 H70 V44 C70 65 58 77 50 77 C42 77 30 65 30 44 Z" fill="url(#'+gid+')" stroke="'+dim+'" stroke-width="2"/>'+
+      '<path d="M30 16 C13 16 13 46 29 49" fill="none" stroke="'+dim+'" stroke-width="4.5" stroke-linecap="round"/>'+
+      '<path d="M70 16 C87 16 87 46 71 49" fill="none" stroke="'+dim+'" stroke-width="4.5" stroke-linecap="round"/>'+
+      '<rect x="46" y="77" width="8" height="15" fill="'+dim+'"/>'+
+      '<path d="M31 96 H69 L64 109 H36 Z" fill="'+dim+'"/>'+
+      '<rect x="28" y="109" width="44" height="8" rx="2" fill="'+main+'"/>'+
+      '<ellipse cx="41" cy="26" rx="5.5" ry="13" fill="#ffffff" opacity="'+(empty?'.08':'.28')+'"/>'+
     '</svg>';
   }
 
-  /* ---- 헤더: 로그인 상태별 우측 영역 ---- */
+  /* ============ 헤더 ============ */
   function renderSteamWrap(){
     if(!state.user){
       steamWrap.innerHTML =
-        '<a class="steam-btn" href="/auth/steam"><span class="dot" style="background:#5c6175;box-shadow:none;"></span><span>Steam으로 로그인</span></a>'+
-        '<span class="steam-note"><b>Steam 프로필/게임 세부정보가 "공개"</b>로 설정되어 있어야<br>업적과 이미지를 불러올 수 있어요</span>';
+        '<a class="steam-btn" href="/auth/steam"><span class="dot" style="background:#5c6175;box-shadow:none;"></span><span>'+t('loginBtn')+'</span></a>'+
+        '<div class="steam-note"><div><b>'+t('steamNote1')+'</b></div><div>'+t('steamNote2')+'</div></div>';
       return;
     }
     steamWrap.innerHTML =
       '<div class="steam-row">'+
-        '<button class="ghost-btn" id="syncBtn">동기화</button>'+
-        '<button class="steam-btn" id="logoutBtn" type="button"><span class="dot"></span><span>'+state.user.displayName+'</span></button>'+
+        '<button class="ghost-btn" id="syncBtn">'+t('syncBtn')+'</button>'+
+        '<button class="steam-btn" id="whoBtn" type="button"><span class="dot"></span><span>'+state.user.displayName+'</span></button>'+
       '</div>'+
-      '<span class="steam-note"><b>Steam 프로필/게임 세부정보가 "공개"</b>로 설정되어 있어야<br>업적과 이미지를 불러올 수 있어요</span>';
+      '<div class="steam-note"><div><b>'+t('steamNote1')+'</b></div><div>'+t('steamNote2')+'</div></div>';
     document.getElementById('syncBtn').addEventListener('click', doSync);
-    document.getElementById('logoutBtn').addEventListener('click', function(){
+    document.getElementById('whoBtn').addEventListener('click', confirmLogout);
+  }
+
+  function confirmLogout(){
+    var overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML =
+      '<div class="modal-box"><p>'+t('logoutConfirm')+'</p>'+
+        '<div class="modal-actions">'+
+          '<button class="modal-btn primary" id="logoutYes">'+t('yes')+'</button>'+
+          '<button class="modal-btn" id="logoutNo">'+t('no')+'</button>'+
+        '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+    document.getElementById('logoutNo').addEventListener('click', function(){ overlay.remove(); });
+    document.getElementById('logoutYes').addEventListener('click', function(){
       api('/auth/logout', { method:'POST' }).then(function(){ location.reload(); });
     });
   }
 
   function renderGate(message){
+    document.getElementById('footerText').textContent = t('footer');
     app.innerHTML =
       '<div class="gate">'+
         '<h1>TROPHION</h1>'+
-        '<p>Steam으로 로그인하면 보유 게임과 업적을 불러와 금/은/동 트로피케이스를 만들 수 있어요.</p>'+
+        '<p>'+t('gateDesc')+'</p>'+
         (message ? '<p class="err">'+message+'</p>' : '')+
-        '<a class="cta" href="/auth/steam">Steam으로 로그인</a>'+
+        '<a class="cta">'+
+        '</a>'+
       '</div>';
+    var cta = app.querySelector('.cta');
+    cta.textContent = t('loginBtn');
+    cta.setAttribute('href','/auth/steam');
   }
 
   function doSync(){
     var btn = document.getElementById('syncBtn');
-    if(btn){ btn.disabled = true; btn.textContent = '동기화 중…'; }
+    if(btn){ btn.disabled = true; btn.textContent = t('syncing'); }
     api('/api/games/sync', { method:'POST' }).then(function(res){
       if(!res.ok){
-        alert(res.body.message || res.body.error || '동기화 실패');
-        if(btn){ btn.disabled = false; btn.textContent = '동기화'; }
+        alert(res.body.message || res.body.error || 'sync failed');
+        if(btn){ btn.disabled = false; btn.textContent = t('syncBtn'); }
         return;
       }
       loadEverything();
     });
   }
 
-  /* ---- 히어로 + 통계 ---- */
+  /* ============ 히어로 + 레이아웃 뼈대 ============ */
   function renderHero(stats){
     document.getElementById('statGames').textContent = stats.games;
     document.getElementById('statTrophies').textContent = stats.totalTrophies;
     document.getElementById('statScore').textContent = stats.rarityScore.toLocaleString();
+    document.getElementById('footerText').textContent = t('footer');
 
     var avatarHtml = state.user.avatarUrl
       ? '<img src="'+state.user.avatarUrl+'" alt="">'
       : (state.user.displayName || '?').slice(0,1).toUpperCase();
 
-    var heroHtml =
+    app.innerHTML =
       '<section class="hero">'+
         '<div class="avatar">'+avatarHtml+'</div>'+
         '<div class="hero-id">'+
@@ -322,54 +446,59 @@
           '<span class="sub">'+(state.user.profileUrl || 'steamcommunity.com')+'</span>'+
         '</div>'+
         '<div class="hero-metrics">'+
-          '<div class="metric"><b>'+stats.perfectGames+'</b><span>완벽 클리어</span></div>'+
-          '<div class="metric"><b>'+stats.totalTrophies+'</b><span>총 업적 수</span></div>'+
-          '<div class="metric"><b class="gold-text">'+stats.avgRarity+'%</b><span>평균 희귀도</span></div>'+
+          '<div class="metric"><b>'+stats.perfectGames+'</b><span>'+t('heroPerfect')+'</span></div>'+
+          '<div class="metric"><b>'+stats.totalTrophies+'</b><span>'+t('heroTotal')+'</span></div>'+
+          '<div class="metric"><b class="gold-text">'+stats.avgRarity+'%</b><span>'+t('heroAvgRarity')+'</span></div>'+
         '</div>'+
       '</section>'+
       '<div class="layout">'+
         '<aside class="rank">'+
-          '<div class="rank-head"><span>내 게임 랭킹 · 달성도순</span><span id="rankCount"></span></div>'+
+          '<div class="rank-head"><span>'+t('rankHeader')+'</span><span id="rankCount"></span></div>'+
           '<ul class="rank-list" id="rankList"></ul>'+
         '</aside>'+
         '<main>'+
           '<div class="dash-head" id="dashHead"></div>'+
           '<div class="tpl-card" id="tplCard">'+
-            '<div class="tpl-top"><span class="tpl-user">@'+state.user.displayName+'</span><span class="tpl-site">TROPHY TEMPLATE</span></div>'+
+            '<div class="tpl-top"><span class="tpl-user">@'+state.user.displayName+'</span>'+
+              '<span class="brand-mini"><svg class="brand-mark" viewBox="0 0 32 32" fill="none">'+
+                '<path d="M8 6H24V13C24 18.5 20.5 22 16 22C11.5 22 8 18.5 8 13V6Z" stroke="url(#g2)" stroke-width="2"/>'+
+                '<path d="M8 8H4V11C4 14 6 16 9 16" stroke="url(#g2)" stroke-width="2" stroke-linecap="round"/>'+
+                '<path d="M24 8H28V11C28 14 26 16 23 16" stroke="url(#g2)" stroke-width="2" stroke-linecap="round"/>'+
+                '<path d="M16 22V26" stroke="url(#g2)" stroke-width="2"/><path d="M11 28H21" stroke="url(#g2)" stroke-width="2" stroke-linecap="round"/>'+
+                '<defs><linearGradient id="g2" x1="4" y1="6" x2="28" y2="28"><stop stop-color="#e8b84b"/><stop offset="1" stop-color="#cd7f4c"/></linearGradient></defs>'+
+              '</svg><span class="brand-name">TROPHION</span></span>'+
+            '</div>'+
             '<div id="tplGold"></div>'+
             '<div class="tpl-row2"><div id="tplSilver"></div><div id="tplBronze"></div></div>'+
-            '<div class="tpl-foot">'+
-              '<span class="tpl-foot-stat">이 게임에서 <b id="tplPickedCount">0</b>/3 자리 채움</span>'+
-              '<button class="tpl-share" type="button" disabled title="다음 단계: PNG로 내보내거나 공유 링크를 생성">이미지로 공유</button>'+
-            '</div>'+
+            '<div class="tpl-foot"><button class="tpl-share" type="button" id="downloadBtn">'+t('downloadBtn')+'</button></div>'+
           '</div>'+
           '<div class="rack-section">'+
-            '<div class="rack-head"><h3 id="rackTitle">획득한 업적 메달</h3><span class="rack-hint" id="rackHint"></span></div>'+
+            '<div class="rack-head"><h3 id="rackTitle"></h3><span class="rack-hint" id="rackHint"></span></div>'+
             '<div class="medal-rack" id="medalRack"></div>'+
           '</div>'+
           '<div class="ach-section-head">'+
-            '<h3 id="achSectionTitle">업적 목록</h3>'+
-            '<span class="ach-section-hint">★ 을 눌러 위 템플릿의 금/은/동 자리를 채워보세요</span>'+
+            '<h3 id="achSectionTitle"></h3>'+
+            '<span class="ach-section-hint">'+t('achSectionHint')+'</span>'+
           '</div>'+
           '<div class="ach-grid" id="achGrid"></div>'+
         '</main>'+
       '</div>';
-    app.innerHTML = heroHtml;
   }
 
-  /* ---- 왼쪽 게임 목록 ---- */
+  /* ============ 왼쪽 게임 목록 ============ */
   function renderSidebar(){
-    document.getElementById('rankCount').textContent = state.games.length + '개';
+    document.getElementById('rankCount').textContent = t('rankCount')(state.games.length);
     var list = document.getElementById('rankList');
     list.innerHTML = state.games.map(function(g, i){
       return '<li><button class="rank-item'+(g.appId===state.activeAppId?' active':'')+'" data-appid="'+g.appId+'">'+
         '<span class="rank-num">'+(i+1)+'</span>'+
-        '<img class="rank-cover" src="'+g.coverUrl+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'+
+        '<img class="rank-cover" src="'+g.coverUrl+'" data-name="'+escAttr(g.name)+'" alt="" loading="lazy">'+
         '<span class="rank-info"><span class="rn">'+g.name+'</span>'+
           '<span class="rank-bar-track"><span class="rank-bar-fill" style="width:'+g.completionPct+'%"></span></span></span>'+
         '<span class="rank-pct">'+g.completionPct+'%</span>'+
       '</button></li>';
     }).join('');
+    wireCoverFallbacks(list);
     list.querySelectorAll('[data-appid]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var id = Number(btn.getAttribute('data-appid'));
@@ -381,7 +510,7 @@
     });
   }
 
-  /* ---- 오른쪽 대시보드 ---- */
+  /* ============ 오른쪽 대시보드 ============ */
   function loadActiveGame(){
     return api('/api/games/'+state.activeAppId+'/achievements').then(function(res){
       if(!res.ok) return;
@@ -395,28 +524,41 @@
 
   function renderDashboard(){
     var g = state.activeGame;
-    document.getElementById('dashHead').innerHTML =
-      '<img class="dash-cover" src="'+g.coverUrl+'" alt="" onerror="this.style.visibility=\'hidden\'">'+
+    var head = document.getElementById('dashHead');
+    head.innerHTML =
+      '<img class="dash-cover" src="'+g.coverUrl+'" data-name="'+escAttr(g.name)+'" alt="">'+
       '<div class="dash-meta"><span class="gt">'+g.name+'</span>'+
-      '<span class="gd"><b>'+g.achDone+'/'+g.achTotal+'</b> 업적 · Rarity Score <b>'+g.rarityScore+'</b></span></div>'+
+      '<span class="gd"><b>'+t('achProgress')(g.achDone,g.achTotal)+'</b> · '+t('rarityScoreLabel')+' <b>'+g.rarityScore+'</b></span></div>'+
       '<div class="dash-ring-wrap">'+
         '<svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true">'+
           '<circle cx="32" cy="32" r="27" fill="none" stroke="var(--surface-3)" stroke-width="7"/>'+
           '<circle cx="32" cy="32" r="27" fill="none" stroke="var(--gold)" stroke-width="7" stroke-linecap="round" '+
             'stroke-dasharray="169.6" stroke-dashoffset="'+(169.6 - 169.6*g.completionPct/100).toFixed(1)+'" transform="rotate(-90 32 32)"/>'+
         '</svg>'+
-        '<div class="dash-ring-num"><b>'+g.completionPct+'%</b><span>완료율</span></div>'+
+        '<div class="dash-ring-num"><b>'+g.completionPct+'%</b><span>'+t('completion')+'</span></div>'+
       '</div>';
+    wireCoverFallbacks(head);
 
-    document.getElementById('achSectionTitle').textContent = g.name+' 업적 목록';
-    document.getElementById('rackTitle').textContent = g.name+'에서 획득한 업적 메달';
+    document.getElementById('achSectionTitle').textContent = t('achSectionTitle')(g.name);
+    document.getElementById('rackTitle').textContent = t('rackTitle')(g.name);
 
-    var slotForApiName = {};
-    state.picks.forEach(function(p){ slotForApiName[p.achievementApiName] = p.slot; });
+    var byslot = { gold:null, silver:null, bronze:null };
+    state.picks.forEach(function(p){ byslot[p.slot] = p.achievementApiName; });
 
-    renderTemplate(g, slotForApiName);
+    renderTemplate(g, byslot);
     renderRack(g);
-    renderAchievements(g, slotForApiName);
+    renderAchievements(g);
+
+    var dlBtn = document.getElementById('downloadBtn');
+    dlBtn.onclick = function(){
+      var url = '/u/'+encodeURIComponent(state.user.steamId64)+'/'+state.activeAppId+'.png';
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'trophion-'+g.appId+'.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    };
   }
 
   function findAchByApiName(g, apiName){
@@ -425,39 +567,36 @@
   function renderSlot(el, slot, size, g, apiName){
     if(!apiName){
       el.className='tpl-slot empty';
-      el.innerHTML = '<div class="tpl-medal">'+bigMedalSvg(slot,size,true)+'</div>'+
-        '<span class="tpl-rank-label">'+slot.label+'</span><span class="tpl-name">비어 있음</span>';
+      el.innerHTML = '<div class="tpl-medal">'+bigTrophySvg(slot,size,true)+'</div>'+
+        '<span class="tpl-rank-label">'+slot.label+'</span><span class="tpl-name">'+t('tplEmpty')+'</span>';
       return;
     }
     var a = findAchByApiName(g, apiName);
     if(!a){ renderSlot(el, slot, size, g, null); return; }
     el.className='tpl-slot';
     el.style.setProperty('--slot-color', slot.color);
-    el.innerHTML = '<div class="tpl-medal">'+bigMedalSvg(slot,size,false)+'</div>'+
+    el.innerHTML = '<div class="tpl-medal">'+bigTrophySvg(slot,size,false)+'</div>'+
       '<span class="tpl-rank-label">'+slot.label+'</span>'+
       '<span class="tpl-name">'+a.displayName+'</span>'+
       '<span class="tpl-game">'+g.name+'</span>'+
-      '<span class="tpl-rarity">전세계 '+a.globalPct.toFixed(1)+'%만 달성</span>';
+      '<span class="tpl-rarity">'+t('tplRarity')(a.globalPct.toFixed(1))+'</span>';
   }
-  function renderTemplate(g, slotForApiName){
-    var byslot = { gold:null, silver:null, bronze:null };
-    state.picks.forEach(function(p){ byslot[p.slot] = p.achievementApiName; });
+  function renderTemplate(g, byslot){
     renderSlot(document.getElementById('tplGold'),   SLOTS[0], 168, g, byslot.gold);
     renderSlot(document.getElementById('tplSilver'), SLOTS[1], 108, g, byslot.silver);
     renderSlot(document.getElementById('tplBronze'), SLOTS[2], 86,  g, byslot.bronze);
-    document.getElementById('tplPickedCount').textContent = state.picks.length;
   }
 
   function renderRack(g){
     var unlocked = g.achievements.filter(function(a){ return a.unlocked; });
-    document.getElementById('rackHint').textContent = unlocked.length+'/'+g.achTotal+'개 진열 중';
+    document.getElementById('rackHint').textContent = t('rackHint')(unlocked.length, g.achTotal);
     var rack = document.getElementById('medalRack');
     if(unlocked.length===0){
-      rack.innerHTML = '<div class="rack-empty">아직 이 게임에서 획득한 업적이 없어요.</div>';
+      rack.innerHTML = '<div class="rack-empty">'+t('rackEmpty')+'</div>';
       return;
     }
     rack.innerHTML = unlocked.map(function(a){
-      return '<div class="rack-item" title="'+a.displayName+' — 전세계 '+a.globalPct.toFixed(1)+'%만 달성">'+
+      return '<div class="rack-item" title="'+escAttr(a.displayName)+' — '+t('tplRarity')(a.globalPct.toFixed(1))+'">'+
         '<div class="medal">'+medalSvg(a.tier, false, 44)+'</div>'+
         '<span>'+a.displayName+'</span>'+
       '</div>';
@@ -465,7 +604,10 @@
   }
 
   var starSvg = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5l2.47 5.6 6.03.55-4.58 4.03 1.37 5.92L10 14.6l-5.29 3 1.37-5.92L1.5 7.65l6.03-.55z"/></svg>';
-  function renderAchievements(g, slotForApiName){
+  function renderAchievements(g){
+    var slotForApiName = {};
+    state.picks.forEach(function(p){ slotForApiName[p.achievementApiName] = p.slot; });
+
     var grid = document.getElementById('achGrid');
     grid.innerHTML = g.achievements.map(function(a){
       var slot = slotForApiName[a.apiName];
@@ -474,15 +616,15 @@
       var right = '';
       if(a.unlocked){
         right = slot
-          ? '<button class="pick-badge" type="button" style="--pick-color:'+slotDef.color+'" data-name="'+a.apiName+'">'+(SLOTS.indexOf(slotDef)+1)+'</button>'
-          : '<button class="star-btn" type="button" data-name="'+a.apiName+'" aria-label="템플릿에 등록">'+starSvg+'</button>';
+          ? '<button class="pick-badge" type="button" style="--pick-color:'+slotDef.color+'" data-name="'+escAttr(a.apiName)+'">'+(SLOTS.indexOf(slotDef)+1)+'</button>'
+          : '<button class="star-btn" type="button" data-name="'+escAttr(a.apiName)+'" aria-label="pick">'+starSvg+'</button>';
       }
       return '<div class="'+cls+'" style="--tier-color:'+(TIER[a.tier]?TIER[a.tier].color:TIER.common.color)+(slotDef?';--pick-color:'+slotDef.color:'')+'">'+
         '<div class="medal">'+medalSvg(a.tier, !a.unlocked, 36)+'</div>'+
         '<div class="ach-body">'+
           '<div class="ach-name">'+a.displayName+'</div>'+
           '<div class="ach-desc">'+(a.description||'')+'</div>'+
-          '<div class="ach-foot"><span class="ach-tier">'+(TIER[a.tier]?TIER[a.tier].label:'COMMON')+'</span><span class="ach-pct">'+a.globalPct.toFixed(1)+'% 달성</span></div>'+
+          '<div class="ach-foot"><span class="ach-tier">'+(TIER[a.tier]?TIER[a.tier].label:'COMMON')+'</span><span class="ach-pct">'+t('achAchieved')(a.globalPct.toFixed(1))+'</span></div>'+
         '</div>'+right+
       '</div>';
     }).join('');
@@ -498,7 +640,7 @@
   function nextOpenSlot(){
     var used = state.picks.map(function(p){ return p.slot; });
     var open = ['gold','silver','bronze'].filter(function(s){ return used.indexOf(s) === -1; });
-    return open.length ? open[0] : 'bronze'; // 꽉 찼으면 브론즈 자리를 교체
+    return open.length ? open[0] : 'bronze';
   }
   function pickAchievement(apiName){
     var slot = nextOpenSlot();
@@ -511,14 +653,14 @@
     api('/api/trophies?appId='+state.activeAppId+'&slot='+pick.slot, { method:'DELETE' }).then(loadActiveGame);
   }
 
-  /* ---- 시작 ---- */
+  /* ============ 시작 ============ */
   function loadEverything(){
     Promise.all([ api('/api/games'), api('/api/games/stats') ]).then(function(results){
       var gamesRes = results[0], statsRes = results[1];
       if(!gamesRes.ok){ renderGate(gamesRes.body.message); return; }
       state.games = gamesRes.body.games.sort(function(a,b){ return b.completionPct-a.completionPct || b.rarityScore-a.rarityScore; });
       if(state.games.length === 0){
-        app.innerHTML = '<p class="status">아직 동기화된 게임이 없어요. 오른쪽 위 "동기화" 버튼을 눌러주세요.</p>';
+        app.innerHTML = '<p class="status">'+t('noGames')+'</p>';
         return;
       }
       renderHero(statsRes.ok ? statsRes.body : { games:state.games.length, totalTrophies:0, rarityScore:0, perfectGames:0, avgRarity:0 });
@@ -528,12 +670,24 @@
     });
   }
 
-  api('/auth/me').then(function(res){
-    if(!res.ok || !res.body.user){ renderSteamWrap(); renderGate(); return; }
-    state.user = res.body.user;
-    renderSteamWrap();
-    loadEverything();
-  });
+  function boot(){
+    api('/auth/me').then(function(res){
+      if(!res.ok || !res.body.user){
+        // 로그인 전에는 Steam 언어를 모르니 접속 IP로 국가를 추정해서 언어를 고른다.
+        api('/api/locale').then(function(lr){
+          locale = (lr.ok && lr.body.locale) || 'en';
+          renderSteamWrap();
+          renderGate();
+        });
+        return;
+      }
+      state.user = res.body.user;
+      locale = state.user.locale || 'en';
+      renderSteamWrap();
+      loadEverything();
+    });
+  }
+  boot();
 })();
 </script>
 </body>

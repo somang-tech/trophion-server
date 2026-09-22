@@ -43,9 +43,10 @@ export async function getOwnedGames(steamId64, apiKey) {
 }
 
 // 특정 게임에서 이 유저가 달성한 업적 목록 (achieved 0/1 + unlocktime)
-export async function getPlayerAchievements(steamId64, appId, apiKey) {
+// lang: Steam 언어 문자열(koreana/english/japanese 등) — 유저의 추정 로케일로 호출측에서 넘겨준다.
+export async function getPlayerAchievements(steamId64, appId, apiKey, lang = 'english') {
   const url = withKey(
-    `${BASE}/ISteamUserStats/GetPlayerAchievements/v1/?steamid=${steamId64}&appid=${appId}&l=koreana`,
+    `${BASE}/ISteamUserStats/GetPlayerAchievements/v1/?steamid=${steamId64}&appid=${appId}&l=${lang}`,
     apiKey
   );
   const res = await fetch(url);
@@ -68,9 +69,9 @@ export async function getGlobalAchievementPercentages(appId) {
 }
 
 // 게임의 업적 스키마(표시 이름, 설명, 아이콘) — GetPlayerAchievements는 이 정보를 안 주기 때문에 별도 호출.
-export async function getSchemaForGame(appId, apiKey) {
+export async function getSchemaForGame(appId, apiKey, lang = 'english') {
   const url = withKey(
-    `${BASE}/ISteamUserStats/GetSchemaForGame/v2/?appid=${appId}&l=koreana`,
+    `${BASE}/ISteamUserStats/GetSchemaForGame/v2/?appid=${appId}&l=${lang}`,
     apiKey
   );
   const res = await fetch(url);
