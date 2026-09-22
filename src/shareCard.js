@@ -37,13 +37,63 @@ const SLOT_STYLE = {
   bronze: { main: '#cd7f4c', dim: '#6b4a34', light: '#ffe1c7' }
 };
 
-// 사이트 헤더의 TROPHION 로고(.brand-mark)와 정확히 같은 패스 데이터를 그대로 확대해서 쓴다.
-// 원본 SVG(public/index.html): 볼 M8 6H24V13C24 18.5 20.5 22 16 22C11.5 22 8 18.5 8 13V6Z,
-// 손잡이 2개, 기둥, 받침대 — viewBox 0 0 32 32. 로고 자체는 선 아이콘이라 볼 안쪽은
-// 그라디언트로 채우고 가운데 작은 별 하나만 포인트로 더했다 (public/index.html의
-// bigTrophySvg와 동일한 로직).
+function hexToRgb(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return m ? `${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)}` : '255,255,255';
+}
+
+// 부드러운 후광(glow) — 살짝 번져 보이게 반경이 다른 원 여러 개를 겹쳐서 흉내낸다
+// (@napi-rs/canvas 버전에 따라 ctx.filter=blur(...)를 못 믿을 수 있어 그라디언트로 대체).
+function drawGlow(ctx, cx, cy, r, color, opacity) {
+  const rgb = hexToRgb(color);
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  grad.addColorStop(0, `rgba(${rgb},${opacity})`);
+  grad.addColorStop(0.6, `rgba(${rgb},${opacity * 0.35})`);
+  grad.addColorStop(1, `rgba(${rgb},0)`);
+  ctx.save();
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// 4~8각 반짝이(스파클) 별 하나.
+function drawSparkle(ctx, cx, cy, r, color, opacity) {
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const rr = i % 2 === 0 ? r : r * 0.28;
+    const a = (Math.PI / 4) * i;
+    const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// 사이트 헤더의 TROPHION 로고(.brand-mark)와 정확히 같은 패스 데이터를 그대로 확대해서 쓴다
+// (볼 M8 6H24V13C…, 손잡이 2개, 기둥, 받침대 — viewBox 0 0 32 32). 로고는 얇은 "선" 아이콘이라
+// 볼 안쪽을 진하게 채우면 두 커브가 바닥 한 점(16,22)에서 뾰족하게 만나는 부분이 도드라져서
+// 트로피가 아니라 이상한 두 쪽짜리 덩어리처럼 보인다 — 그래서 채우지 않고 로고와 동일하게
+// "선" 위주로 그리되, 뒤에 은은한 후광(glow)과 반짝이(sparkle)를 더해서 화려한 느낌을 낸다.
 function drawLogoTrophy(ctx, x, y, size, style) {
   const s = size / 32;
+  const cx = x + 16 * s, cy = y + 15 * s;
+
+  // 후광
+  drawGlow(ctx, cx, cy, size * 0.52, style.main, 0.5);
+
+  // 반짝이 (아이콘 주변에 흩뿌림)
+  drawSparkle(ctx, x + 2 * s, y + 4 * s, size * 0.05, style.light, 0.9);
+  drawSparkle(ctx, x + 30 * s, y + 1 * s, size * 0.035, style.light, 0.75);
+  drawSparkle(ctx, x + 29 * s, y + 26 * s, size * 0.045, style.light, 0.85);
+  drawSparkle(ctx, x - 1 * s, y + 23 * s, size * 0.03, style.light, 0.6);
+  drawSparkle(ctx, x + 16 * s, y - 4 * s, size * 0.03, style.light, 0.55);
+
   const grad = ctx.createLinearGradient(x + 4 * s, y + 6 * s, x + 28 * s, y + 28 * s);
   grad.addColorStop(0, style.light);
   grad.addColorStop(0.5, style.main);
@@ -52,9 +102,9 @@ function drawLogoTrophy(ctx, x, y, size, style) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(s, s);
+  ctx.lineJoin = 'round';
 
-  // 볼
-  ctx.fillStyle = grad;
+  // 볼 — 아주 옅은 채움(유리질 느낌)만 주고 윤곽선으로 형태를 낸다
   ctx.beginPath();
   ctx.moveTo(8, 6);
   ctx.lineTo(24, 6);
@@ -62,14 +112,17 @@ function drawLogoTrophy(ctx, x, y, size, style) {
   ctx.bezierCurveTo(24, 18.5, 20.5, 22, 16, 22);
   ctx.bezierCurveTo(11.5, 22, 8, 18.5, 8, 13);
   ctx.closePath();
+  ctx.fillStyle = style.main;
+  ctx.globalAlpha = 0.12;
   ctx.fill();
-  ctx.lineWidth = 1.4;
-  ctx.strokeStyle = style.dim;
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 1.7;
+  ctx.strokeStyle = grad;
   ctx.stroke();
 
   // 손잡이
   ctx.strokeStyle = grad;
-  ctx.lineWidth = 2.6;
+  ctx.lineWidth = 2;
   ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(8, 8); ctx.lineTo(4, 8); ctx.lineTo(4, 11);
@@ -207,12 +260,16 @@ export async function renderTrophyCardPNG({ appId, gameName, picks }) {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  // 게임 커버 이미지를 배경에 은은하게 오버랩 (화면 대시보드와 동일한 연출)
+  // 게임 커버 이미지를 배경에 은은하게 오버랩 (화면 대시보드와 동일한 연출).
+  // cover(꽉 채우기)가 아니라 contain(안 잘리게 전체를 보여주기)으로 맞춘다 — 정사각형
+  // 캔버스에 보통 16:9 커버 이미지를 채우면 위아래/좌우가 크게 잘려나가기 때문에,
+  // 이미지 전체가 다 보이도록 비율 유지한 채 안쪽에 맞추고 남는 여백은 배경 그라디언트가
+  // 채우게 한다.
   const cover = await loadBackgroundCover(appId);
   if (cover) {
     ctx.save();
     ctx.globalAlpha = 0.3;
-    const scale = Math.max(W / cover.width, H / cover.height);
+    const scale = Math.min(W / cover.width, H / cover.height);
     const dw = cover.width * scale, dh = cover.height * scale;
     ctx.drawImage(cover, (W - dw) / 2, (H - dh) / 2, dw, dh);
     ctx.restore();
@@ -234,33 +291,33 @@ export async function renderTrophyCardPNG({ appId, gameName, picks }) {
   const wmText = 'TROPHION';
   ctx.font = `${wmSize}px "${FONT_DISPLAY}"`;
   let wmWidth = 0;
-  for (const ch of wmText) wmWidth += ctx.measureText(ch).width + 2;
-  wmWidth -= 2;
+  for (const ch of wmText) wmWidth += ctx.measureText(ch).width + 0.5;
+  wmWidth -= 0.5;
   const wmX = W - 54 - wmWidth - 38;
   drawBrandMark(ctx, wmX, 42, 28);
-  drawWordmark(ctx, wmText, wmX + 38, 62, wmSize, 2);
+  drawWordmark(ctx, wmText, wmX + 38, 62, wmSize, 0.5);
 
   const byslot = Object.fromEntries(picks.map((p) => [p.slot, p]));
 
   // 골드 (위쪽 중앙, 크게)
   drawSlot(ctx, {
-    cx: W / 2, top: 104, size: 400,
+    cx: W / 2, top: 110, size: 380,
     style: byslot.gold ? SLOT_STYLE.gold : { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' },
-    label: '1ST · GOLD', pick: byslot.gold, nameFont: 40, rarityFont: 24
+    label: '1ST · GOLD', pick: byslot.gold, nameFont: 38, rarityFont: 22
   });
 
   // 실버 (좌하단, 중간)
   drawSlot(ctx, {
-    cx: W * 0.278, top: 670, size: 250,
+    cx: W * 0.278, top: 660, size: 240,
     style: byslot.silver ? SLOT_STYLE.silver : { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' },
-    label: '2ND · SILVER', pick: byslot.silver, nameFont: 26, rarityFont: 18
+    label: '2ND · SILVER', pick: byslot.silver, nameFont: 25, rarityFont: 17
   });
 
   // 브론즈 (우하단, 조금 더 작게)
   drawSlot(ctx, {
-    cx: W * 0.74, top: 670, size: 214,
+    cx: W * 0.74, top: 660, size: 204,
     style: byslot.bronze ? SLOT_STYLE.bronze : { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' },
-    label: '3RD · BRONZE', pick: byslot.bronze, nameFont: 23, rarityFont: 16
+    label: '3RD · BRONZE', pick: byslot.bronze, nameFont: 22, rarityFont: 15
   });
 
   return canvas.toBuffer('image/png');
