@@ -23,7 +23,10 @@ Steam OpenID 로그인 → Steam Web API로 게임/업적 동기화 → DB 캐�
 
 1. **Steam Web API 키** — https://steamcommunity.com/dev/apikey (Steam 계정만 있으면 즉시 발급)
 2. Node.js 18 이상
-3. (운영 배포 시) Postgres 등 실제 DB. 로컬 개발은 SQLite로 바로 된다.
+3. **PostgreSQL** — `prisma/schema.prisma`의 기본 provider가 `postgresql`이다(Railway 등 실제
+   배포용). `DATABASE_URL`을 `postgresql://...` 연결 문자열로 채우면 된다. 로컬에서 Postgres
+   없이 SQLite로 빠르게 돌리고 싶으면 `datasource.provider`를 `"sqlite"`로 바꾸고
+   `DATABASE_URL=file:./dev.db`처럼 설정한 뒤 아래 명령을 그대로 쓰면 된다.
 
 ## 시작하기
 
@@ -31,11 +34,14 @@ Steam OpenID 로그인 → Steam Web API로 게임/업적 동기화 → DB 캐�
 cd trophion-server
 npm install
 cp .env.example .env
-# .env 열어서 STEAM_API_KEY, SESSION_SECRET 채우기
+# .env 열어서 STEAM_API_KEY, SESSION_SECRET, DATABASE_URL(postgresql://...) 채우기
 
-npx prisma migrate dev --name init   # SQLite 파일(dev.db) + 테이블 생성
-npm run dev                          # http://localhost:3000
+npx prisma db push        # 지금 스키마 그대로 DB에 테이블 생성/동기화 (마이그레이션 파일 없이)
+npm run dev                # http://localhost:3000
 ```
+
+로컬에서 마이그레이션 히스토리를 남기고 싶다면 `npx prisma migrate dev --name init`을 대신
+써도 된다(이 저장소엔 아직 `prisma/migrations` 폴더가 없다 — 최초 1회는 이 명령으로 만들면 됨).
 
 `http://localhost:3000`을 열면 `public/index.html`이 뜬다 — 이게 실제로 이 API에 연결된
 프론트엔드다. "Steam으로 로그인" → 동기화 → 왼쪽에서 게임 클릭 → ★로 금/은/동 픽까지
@@ -111,11 +117,16 @@ CSS는 데모(`trophion.html`)의 CSS를 그대로 가져오고 데이터 소스
    `GetPlayerAchievements`/`GetSchemaForGame` 호출 시 유저 언어로 받아온다
    (`src/steamApi.js`의 `lang` 파라미터, `src/routes/games.js`의 `sync`에서 사용).
 
-**스키마 변경**: `User.locCountryCode String?` 컬럼이 추가됐다. 로컬에서는
-`npx prisma migrate dev --name add_locale`로 마이그레이션을 만들어 커밋하면 되고, Railway
-배포는 `start` 스크립트가 이미 `prisma migrate deploy`를 실행하므로 push만 하면 자동 반영된다.
-`package.json`에 `geoip-lite` 의존성이 새로 추가됐으니, 배포 시 재설치(`npm install`)가
-자동으로 한 번 더 일어난다.
+**스키마 변경**: `User.locCountryCode String?` 컬럼이 추가됐다. 이 저장소는 아직
+`prisma/migrations` 폴더 없이 스키마 파일만으로 관리하고 있어서, `start` 스크립트가
+`prisma db push --accept-data-loss --skip-generate && node src/index.js`로 바뀌어 있다 —
+배포될 때마다 현재 `schema.prisma` 상태를 Postgres에 그대로 동기화(부족한 컬럼/테이블 추가)한
+뒤 서버를 띄운다. 즉 Railway에 push만 하면 컬럼 추가가 자동 반영되고, 별도로 마이그레이션
+명령을 손으로 돌릴 필요가 없다. `package.json`에 `geoip-lite` 의존성도 새로 추가됐으니 배포
+시 재설치(`npm install`)가 자동으로 한 번 더 일어난다.
+나중에 마이그레이션 히스토리(변경 이력 추적)가 필요해지면 `npx prisma migrate dev --name init`
+으로 첫 마이그레이션을 만들고, `start` 스크립트를 `prisma migrate deploy && node src/index.js`
+로 바꾸는 걸 추천한다 — `db push`는 빠르고 간단하지만 이력을 안 남긴다.
 
 ## 최근 반영된 UI 수정 (실사이트 ↔ 아티팩트 데모 최종 정합)
 

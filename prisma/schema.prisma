@@ -1,6 +1,7 @@
 // Trophion — 계정/업적 캐시/트로피케이스 스키마
-// 개발 기본값은 SQLite. 운영에서는 DATABASE_URL을 Postgres 연결 문자열로 바꾸고
-// datasource.provider를 "postgresql"로 바꾸면 된다 (마이그레이션은 새로 생성).
+// 운영(Railway)은 PostgreSQL을 쓴다 (DATABASE_URL이 postgresql://... 형식).
+// 로컬에서 SQLite로 개발하고 싶으면 datasource.provider를 "sqlite"로 바꾸고
+// DATABASE_URL을 file:./dev.db 같은 값으로 바꾼 뒤 마이그레이션을 새로 생성하면 된다.
 
 generator client {
   provider = "prisma-client-js"
