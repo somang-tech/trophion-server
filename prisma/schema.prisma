@@ -1,0 +1,77 @@
+// Trophion — 계정/업적 캐시/트로피케이스 스키마
+// 개발 기본값은 SQLite. 운영에서는 DATABASE_URL을 Postgres 연결 문자열로 바꾸고
+// datasource.provider를 "postgresql"로 바꾸면 된다 (마이그레이션은 새로 생성).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  steamId64   String    @unique // Steam이 주는 64bit SteamID, 우리 시스템의 진짜 유저 키
+  displayName String
+  avatarUrl   String?
+  profileUrl  String?
+  createdAt   DateTime  @default(now())
+  lastSyncAt  DateTime?
+
+  games       GameCache[]
+  picks       TrophyPick[]
+}
+
+// 유저별로 보유한 게임 + 완료율 캐시 (Steam Web API를 매 요청 부르지 않기 위한 캐시)
+model GameCache {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  appId         Int
+  name          String
+  coverColor    String?  // 실제 서비스에선 Steam 커버 이미지 URL로 대체 가능
+  playtimeMin   Int      @default(0)
+  achDone       Int      @default(0)
+  achTotal      Int      @default(0)
+  completionPct Int      @default(0)
+  rarityScore   Int      @default(0)
+  syncedAt      DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+  achievements  AchievementCache[]
+
+  @@unique([userId, appId])
+}
+
+// 게임별 업적 캐시 (달성 여부 + 전세계 달성률)
+model AchievementCache {
+  id           Int       @id @default(autoincrement())
+  gameId       Int
+  apiName      String    // Steam achievement API name (예: ACH_WIN_100_GAMES)
+  displayName  String
+  description  String?
+  tier         String    @default("common") // common/rare/epic/legendary — 전세계 달성률로 우리가 계산해 채움
+  unlocked     Boolean   @default(false)
+  unlockedAt   DateTime?
+  globalPct    Float     @default(100)
+  iconUrl      String?
+
+  game         GameCache @relation(fields: [gameId], references: [id])
+
+  @@unique([gameId, apiName])
+}
+
+// 유저가 "이 업적을 트로피케이스에 전시하겠다" 고른 것. 게임별로 최대 3자리(gold/silver/bronze).
+model TrophyPick {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  appId         Int
+  slot          String   // "gold" | "silver" | "bronze"
+  achievementApiName String
+  pickedAt      DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, appId, slot])
+}

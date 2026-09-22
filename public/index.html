@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trophion</title>
+<style>
+  :root{
+    --bg:#0a0b10; --bg-2:#0e1016; --surface:#151822; --surface-2:#1b1f2b; --surface-3:#232838;
+    --border:#2a2f3d; --border-soft:#1e2230; --text:#eae7de; --text-dim:#9498a8; --text-faint:#5c6175;
+    --gold:#e8b84b; --gold-dim:#7a6530; --silver:#c3c9d6; --silver-dim:#5f6472; --bronze:#cd7f4c; --bronze-dim:#6b4a34;
+    --platinum:#6fe7c9;
+    --font-display:'Bebas Neue',impact,sans-serif;
+    --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --font-mono:ui-monospace,'SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);}
+  .wrap{max-width:1360px;margin:0 auto;padding-inline:clamp(16px,3vw,32px);}
+  header{border-bottom:1px solid var(--border-soft);padding-block:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+  .brand{font-family:var(--font-display);font-size:26px;letter-spacing:1px;color:var(--gold);}
+  .who{display:flex;align-items:center;gap:10px;}
+  .who img{width:34px;height:34px;border-radius:8px;}
+  .btn{font-family:var(--font-mono);font-size:12.5px;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer;}
+  .btn:hover{border-color:var(--gold-dim);}
+  .btn[disabled]{opacity:.5;cursor:default;}
+  .note{font-size:11px;color:var(--text-faint);font-family:var(--font-mono);max-width:260px;text-align:right;line-height:1.4;}
+  .note b{color:var(--text-dim);}
+
+  .gate{max-width:520px;margin:80px auto;text-align:center;padding:0 16px;}
+  .gate h1{font-family:var(--font-display);font-size:40px;letter-spacing:1px;margin-bottom:8px;}
+  .gate p{color:var(--text-dim);font-size:14px;line-height:1.6;}
+
+  .layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:22px;padding-block:22px 50px;align-items:start;}
+  @media (max-width:880px){.layout{grid-template-columns:1fr;}}
+  .rank-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;}
+  .rank-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;border:1px solid transparent;cursor:pointer;background:transparent;width:100%;text-align:left;color:inherit;}
+  .rank-item:hover{background:var(--surface);}
+  .rank-item.active{background:var(--surface-2);border-color:var(--border);}
+  .rank-num{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);width:16px;text-align:right;}
+  .rank-cover{width:44px;height:20px;border-radius:4px;object-fit:cover;flex:none;background:var(--surface-3);}
+  .rank-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+  .rank-info .rn{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rank-bar-track{height:3px;border-radius:2px;background:var(--surface-3);overflow:hidden;}
+  .rank-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--bronze),var(--gold));}
+  .rank-pct{font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);width:32px;text-align:right;}
+
+  .dash-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:1px dashed var(--border);}
+  .dash-cover{width:140px;height:65px;border-radius:10px;object-fit:cover;flex:none;background:var(--surface-2);}
+  .dash-meta .gt{font-family:var(--font-display);font-size:26px;letter-spacing:.4px;}
+  .dash-meta .gd{font-size:12px;color:var(--text-dim);}
+
+  .ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
+  .ach{background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:12px;display:flex;gap:11px;position:relative;}
+  .ach.locked{opacity:.4;}
+  .ach.locked img{filter:grayscale(1) brightness(.6);}
+  .ach img{width:36px;height:36px;border-radius:8px;flex:none;background:var(--surface-3);}
+  .ach-name{font-size:13px;font-weight:700;}
+  .ach-desc{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .ach-pct{font-family:var(--font-mono);font-size:9.5px;color:var(--text-faint);margin-top:4px;display:block;}
+  .star-btn{position:absolute;top:9px;right:9px;width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;color:var(--text-faint);}
+  .pick-badge{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;color:#171208;font-family:var(--font-mono);font-weight:700;font-size:10.5px;display:flex;align-items:center;justify-content:center;border:none;}
+
+  .status{font-family:var(--font-mono);font-size:12px;color:var(--text-faint);padding:20px 0;}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+    <span class="brand">TROPHION</span>
+    <div id="headerRight"></div>
+  </div>
+</header>
+<div id="app" class="wrap"><p class="status">불러오는 중…</p></div>
+
+<script>
+(function(){
+  "use strict";
+  var SLOT_COLORS = { gold:'#e8b84b', silver:'#c3c9d6', bronze:'#cd7f4c' };
+  var app = document.getElementById('app');
+  var headerRight = document.getElementById('headerRight');
+  var state = { user:null, games:[], activeAppId:null, activeGame:null, picks:[] };
+
+  function api(path, opts){
+    return fetch(path, Object.assign({ headers:{'Content-Type':'application/json'} }, opts))
+      .then(function(r){ return r.json().then(function(body){ return { ok:r.ok, status:r.status, body:body }; }); });
+  }
+
+  function renderHeader(){
+    if(!state.user){ headerRight.innerHTML=''; return; }
+    headerRight.innerHTML =
+      '<div class="who">'+
+        (state.user.avatarUrl ? '<img src="'+state.user.avatarUrl+'" alt="">' : '')+
+        '<span>'+state.user.displayName+'</span>'+
+        '<button class="btn" id="syncBtn">동기화</button>'+
+        '<button class="btn" id="logoutBtn">로그아웃</button>'+
+      '</div>';
+    document.getElementById('syncBtn').addEventListener('click', doSync);
+    document.getElementById('logoutBtn').addEventListener('click', function(){
+      api('/auth/logout', { method:'POST' }).then(function(){ location.reload(); });
+    });
+  }
+
+  function renderGate(message){
+    app.innerHTML =
+      '<div class="gate">'+
+        '<h1>TROPHION</h1>'+
+        '<p>Steam으로 로그인하면 보유 게임과 업적을 불러와 금/은/동 트로피케이스를 만들 수 있어요.<br>'+
+        '<b style="color:#e8b84b">Steam 프로필과 "게임 세부 정보"가 공개로 설정되어 있어야</b> 불러올 수 있습니다.</p>'+
+        (message ? '<p style="color:#e0654f;margin-top:16px;">'+message+'</p>' : '')+
+        '<p style="margin-top:24px;"><a class="btn" href="/auth/steam">Steam으로 로그인</a></p>'+
+      '</div>';
+  }
+
+  function doSync(){
+    var btn = document.getElementById('syncBtn');
+    if(btn){ btn.disabled = true; btn.textContent = '동기화 중…'; }
+    api('/api/games/sync', { method:'POST' }).then(function(res){
+      if(!res.ok){
+        alert(res.body.message || res.body.error || '동기화 실패');
+        if(btn){ btn.disabled = false; btn.textContent = '동기화'; }
+        return;
+      }
+      loadGames();
+    });
+  }
+
+  function loadGames(){
+    api('/api/games').then(function(res){
+      if(!res.ok){ renderGate(res.body.message); return; }
+      state.games = res.body.games.sort(function(a,b){ return b.completionPct - a.completionPct || b.rarityScore - a.rarityScore; });
+      if(state.games.length === 0){
+        app.innerHTML = '<p class="status">아직 동기화된 게임이 없어요. 오른쪽 위 "동기화" 버튼을 눌러주세요.</p>';
+        return;
+      }
+      state.activeAppId = state.games[0].appId;
+      renderApp();
+    });
+  }
+
+  function renderApp(){
+    app.innerHTML =
+      '<div class="layout">'+
+        '<aside><ul class="rank-list" id="rankList"></ul></aside>'+
+        '<main><div id="dashHead"></div><div class="ach-grid" id="achGrid"></div></main>'+
+      '</div>';
+    renderSidebar();
+    loadActiveGame();
+  }
+
+  function renderSidebar(){
+    var list = document.getElementById('rankList');
+    list.innerHTML = state.games.map(function(g, i){
+      return '<li><button class="rank-item'+(g.appId===state.activeAppId?' active':'')+'" data-appid="'+g.appId+'">'+
+        '<span class="rank-num">'+(i+1)+'</span>'+
+        '<img class="rank-cover" src="'+g.coverUrl+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'+
+        '<span class="rank-info"><span class="rn">'+g.name+'</span>'+
+          '<span class="rank-bar-track"><span class="rank-bar-fill" style="width:'+g.completionPct+'%"></span></span></span>'+
+        '<span class="rank-pct">'+g.completionPct+'%</span>'+
+      '</button></li>';
+    }).join('');
+    list.querySelectorAll('[data-appid]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        state.activeAppId = Number(btn.getAttribute('data-appid'));
+        renderSidebar();
+        loadActiveGame();
+      });
+    });
+  }
+
+  function loadActiveGame(){
+    api('/api/games/'+state.activeAppId+'/achievements').then(function(res){
+      if(!res.ok) return;
+      state.activeGame = res.body.game;
+      return api('/api/trophies?appId='+state.activeAppId).then(function(pr){
+        state.picks = pr.ok ? pr.body.picks : [];
+        renderDashboard();
+      });
+    });
+  }
+
+  function renderDashboard(){
+    var g = state.activeGame;
+    document.getElementById('dashHead').innerHTML =
+      '<div class="dash-head">'+
+        '<img class="dash-cover" src="'+g.coverUrl+'" alt="" onerror="this.style.visibility=\'hidden\'">'+
+        '<div class="dash-meta"><div class="gt">'+g.name+'</div>'+
+        '<div class="gd">'+g.achDone+'/'+g.achTotal+' 업적 · 완료율 '+g.completionPct+'% · Rarity Score '+g.rarityScore+'</div></div>'+
+      '</div>';
+
+    var grid = document.getElementById('achGrid');
+    grid.innerHTML = g.achievements.map(function(a){
+      var pick = state.picks.find(function(p){ return p.achievementApiName===a.apiName; });
+      var right = '';
+      if(a.unlocked){
+        right = pick
+          ? '<button class="pick-badge" style="background:'+SLOT_COLORS[pick.slot]+'" data-name="'+a.apiName+'" data-slot="'+pick.slot+'">✕</button>'
+          : '<button class="star-btn" data-name="'+a.apiName+'">★</button>';
+      }
+      return '<div class="ach'+(a.unlocked?'':' locked')+'">'+
+        '<img src="'+(a.iconUrl||'')+'" alt="" onerror="this.style.visibility=\'hidden\'">'+
+        '<div><div class="ach-name">'+a.displayName+'</div>'+
+        '<div class="ach-desc">'+(a.description||'')+'</div>'+
+        '<span class="ach-pct">전세계 '+a.globalPct.toFixed(1)+'%만 달성</span></div>'+
+        right+
+      '</div>';
+    }).join('');
+
+    grid.querySelectorAll('.star-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){ pickAchievement(btn.getAttribute('data-name')); });
+    });
+    grid.querySelectorAll('.pick-badge').forEach(function(btn){
+      btn.addEventListener('click', function(){ removePick(btn.getAttribute('data-slot')); });
+    });
+  }
+
+  function nextOpenSlot(){
+    var used = state.picks.map(function(p){ return p.slot; });
+    return ['gold','silver','bronze'].find(function(s){ return used.indexOf(s) === -1; }) || 'bronze';
+  }
+
+  function pickAchievement(apiName){
+    var slot = nextOpenSlot();
+    api('/api/trophies', {
+      method:'POST',
+      body: JSON.stringify({ appId: state.activeAppId, slot: slot, achievementApiName: apiName })
+    }).then(function(){ loadActiveGame(); });
+  }
+  function removePick(slot){
+    api('/api/trophies?appId='+state.activeAppId+'&slot='+slot, { method:'DELETE' })
+      .then(function(){ loadActiveGame(); });
+  }
+
+  // 시작: 로그인 여부 확인
+  api('/auth/me').then(function(res){
+    if(!res.ok || !res.body.user){ renderGate(); renderHeader(); return; }
+    state.user = res.body.user;
+    renderHeader();
+    loadGames();
+  });
+})();
+</script>
+</body>
+</html>
