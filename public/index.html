@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- "이미지 다운로드" 버튼이 화면의 트로피 카드를 그대로 캡처하는 데 쓴다 —
+     실제 화면과 100% 같은 결과(같은 폰트, 같은 트로피, 같은 배경)를 보장하는 방법이다. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
     --bg:#0a0b10; --bg-2:#0e1016; --surface:#151822; --surface-2:#1b1f2b; --surface-3:#232838;
@@ -328,17 +331,11 @@
   function escAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
   function hashHue(str){ var h=0; str=String(str||'?'); for(var i=0;i<str.length;i++){ h=(h*31+str.charCodeAt(i))>>>0; } return h%360; }
 
-  /* 커버 이미지 후보 URL을 순서대로 시도하고(플레이테스트 등 일부 appid는 header.jpg가
-     없을 수 있어 capsule/library 이미지로 재시도), 전부 실패하면 이니셜 박스로 대체한다. */
+  /* 커버 이미지는 우리 서버의 /img/cover/:appId 프록시를 거친다 — 서버가 header.jpg 등
+     여러 CDN 후보를 내부에서 순서대로 시도해주고, 같은 출처(same-origin)라서 "이미지
+     다운로드" 버튼의 html2canvas 캡처가 크로스 오리진 때문에 막히는 것도 방지된다.
+     그래도 완전히 실패하면(진짜 이미지가 없는 appid) 이니셜 박스로 대체한다. */
   function onCoverError(imgEl){
-    var candidates = [];
-    try{ candidates = JSON.parse(imgEl.getAttribute('data-fallbacks') || '[]'); }catch(e){}
-    var step = Number(imgEl.getAttribute('data-fallback-step') || '0');
-    if(step < candidates.length){
-      imgEl.setAttribute('data-fallback-step', String(step+1));
-      imgEl.src = candidates[step];
-      return;
-    }
     var name = imgEl.getAttribute('data-name') || '?';
     var div = document.createElement('div');
     div.className = imgEl.className + ' cover-fallback';
@@ -347,9 +344,7 @@
     imgEl.replaceWith(div);
   }
   function coverImgAttrs(g){
-    var urls = (g.coverUrls && g.coverUrls.length ? g.coverUrls.slice() : [g.coverUrl]);
-    var first = urls.shift();
-    return 'src="'+escAttr(first)+'" data-fallbacks="'+escAttr(JSON.stringify(urls))+'" data-fallback-step="0"';
+    return 'src="'+escAttr('/img/cover/'+g.appId)+'"';
   }
   function wireCoverFallbacks(root){
     root.querySelectorAll('img.rank-cover,img.dash-cover,img.tpl-bg').forEach(function(img){
@@ -404,19 +399,20 @@
         '<linearGradient id="'+gid+'" x1="4" y1="6" x2="28" y2="28">'+
           '<stop offset="0" stop-color="'+lt+'"/><stop offset=".5" stop-color="'+main+'"/><stop offset="1" stop-color="'+dim+'"/>'+
         '</linearGradient>'+
-        '<radialGradient id="'+fid+'" cx=".5" cy=".47" r=".55">'+
-          '<stop offset="0" stop-color="'+main+'" stop-opacity="'+glowOp+'"/>'+
+        '<radialGradient id="'+fid+'" cx=".5" cy=".47" r=".7">'+
+          '<stop offset="0" stop-color="'+lt+'" stop-opacity="'+(glowOp*0.9).toFixed(2)+'"/>'+
+          '<stop offset=".35" stop-color="'+main+'" stop-opacity="'+(glowOp*0.7).toFixed(2)+'"/>'+
+          '<stop offset=".7" stop-color="'+main+'" stop-opacity="'+(glowOp*0.22).toFixed(2)+'"/>'+
           '<stop offset="1" stop-color="'+main+'" stop-opacity="0"/>'+
         '</radialGradient>'+
       '</defs>'+
-      '<circle cx="16" cy="15" r="21" fill="url(#'+fid+')"/>'+
+      '<circle cx="16" cy="15" r="24" fill="url(#'+fid+')"/>'+
       sparkle(2,4,2.6,sparkOp*.9)+sparkle(31,1,1.9,sparkOp*.7)+sparkle(30,26,2.4,sparkOp*.85)+sparkle(-1,23,1.7,sparkOp*.6)+sparkle(16,-4,1.6,sparkOp*.5)+
-      '<path d="M8 6H24V13C24 18.5 20.5 22 16 22C11.5 22 8 18.5 8 13V6Z" fill="'+main+'" fill-opacity="'+(empty?'.06':'.12')+'" stroke="url(#'+gid+')" stroke-width="1.7" stroke-linejoin="round"/>'+
+      '<path d="M8 6H24V13C24 18.5 20.5 22 16 22C11.5 22 8 18.5 8 13V6Z" fill="'+main+'" fill-opacity="'+(empty?'.06':'.1')+'" stroke="url(#'+gid+')" stroke-width="1.7" stroke-linejoin="round"/>'+
       '<path d="M8 8H4V11C4 14 6 16 9 16" fill="none" stroke="url(#'+gid+')" stroke-width="2" stroke-linecap="round"/>'+
       '<path d="M24 8H28V11C28 14 26 16 23 16" fill="none" stroke="url(#'+gid+')" stroke-width="2" stroke-linecap="round"/>'+
       '<path d="M16 22V26" stroke="url(#'+gid+')" stroke-width="2"/>'+
       '<path d="M11 28H21" stroke="url(#'+gid+')" stroke-width="2" stroke-linecap="round"/>'+
-      '<path d="M16 8.8 L17 11.3 19.7 11.5 17.6 13.1 18.3 15.7 16 14.2 13.7 15.7 14.4 13.1 12.3 11.5 15 11.3 Z" fill="'+lt+'" opacity="'+(empty?'.35':'.95')+'"/>'+
     '</svg>';
   }
 
@@ -612,13 +608,51 @@
 
     var dlBtn = document.getElementById('downloadBtn');
     dlBtn.onclick = function(){
-      var url = '/u/'+encodeURIComponent(state.user.steamId64)+'/'+state.activeAppId+'.png';
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'trophion-'+g.appId+'.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      // 서버에서 처음부터 다시 그리는 대신, 지금 화면에 보이는 트로피 카드를 그대로
+      // 캡처한다 — 그래야 트로피 모양/로고 폰트/배경 이미지가 미리보기와 100% 같은
+      // 결과가 보장된다(다운로드 버튼 자체는 잠깐 숨겼다가 캡처 후 되돌린다). 캡처 결과
+      // 크기도 카드가 화면에 그려진 실제 크기(=배경 사진 비율)를 그대로 따라간다.
+      if(typeof html2canvas === 'undefined'){
+        alert('Could not load the image export library. Please check your connection and try again.');
+        return;
+      }
+      var card = document.getElementById('tplCard');
+      var foot = card.querySelector('.tpl-foot');
+      var prevLabel = dlBtn.textContent;
+      foot.style.visibility = 'hidden';
+      dlBtn.disabled = true;
+      dlBtn.textContent = 'Preparing…';
+      // 웹폰트(Bebas Neue 등)가 아직 로딩 중일 때 캡처하면 기본 폰트로 찍힐 수 있어서,
+      // 지원되는 브라우저에서는 폰트 로딩이 끝난 뒤에 캡처한다.
+      var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+      ready.then(function(){
+        return html2canvas(card, {
+          backgroundColor: null,
+          useCORS: true,
+          scale: Math.max(2, Math.min(3, (window.devicePixelRatio || 1) * 2))
+        });
+      }).then(function(canvas){
+        foot.style.visibility = '';
+        dlBtn.disabled = false;
+        dlBtn.textContent = prevLabel;
+        canvas.toBlob(function(blob){
+          if(!blob) return;
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'trophion-'+g.appId+'.png';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+        }, 'image/png');
+      }).catch(function(err){
+        foot.style.visibility = '';
+        dlBtn.disabled = false;
+        dlBtn.textContent = prevLabel;
+        console.error('[trophion] image capture failed', err);
+        alert('Something went wrong while creating the image. Please try again.');
+      });
     };
   }
 

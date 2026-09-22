@@ -1,14 +1,15 @@
-// 공개 프로필/디스코드 링크 미리보기 + "이미지 다운로드" 버튼에 쓰이는 PNG 카드 렌더러.
-// public/index.html의 트로피 템플릿과 최대한 같은 재료(같은 로고 패스, 같은 폰트 느낌,
-// 같은 색)로 서버 사이드에서 다시 그린다. 화면 미리보기는 와이드(OG 비율) 그대로 두고,
-// 다운로드 이미지만 인스타/페이스북 표준 정사각형(1080x1080)으로 렌더링한다.
+// 디스코드/트위터 링크 미리보기(OG 이미지, <meta property="og:image">)용 PNG 렌더러.
+// "이미지 다운로드" 버튼은 더 이상 이 파일을 안 쓴다 — public/index.html이 화면에 보이는
+// 트로피 카드를 html2canvas로 그대로 캡처해서 내려받기 때문에(진짜 화면과 100% 동일),
+// 여기 서버 렌더러는 JS를 실행할 수 없는 링크 미리보기 상황에서만 쓰인다. 그래서 크기도
+// OG 이미지 표준 비율(1200x630)로 유지한다.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';
 import { steamCoverUrlCandidates } from './steamApi.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const W = 1080, H = 1080; // Instagram/Facebook 정사각형 표준
+const W = 1200, H = 630; // OG 이미지 표준 비율
 
 // Railway 같은 최소 컨테이너에는 시스템 폰트가 아예 없을 수 있다 — 그러면 @napi-rs/canvas가
 // 도형(패스/그라디언트)은 정상적으로 그리면서도 ctx.fillText만 조용히 아무것도 안 그린다
@@ -42,14 +43,16 @@ function hexToRgb(hex) {
   return m ? `${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)}` : '255,255,255';
 }
 
-// 부드러운 후광(glow) — 살짝 번져 보이게 반경이 다른 원 여러 개를 겹쳐서 흉내낸다
-// (@napi-rs/canvas 버전에 따라 ctx.filter=blur(...)를 못 믿을 수 있어 그라디언트로 대체).
-function drawGlow(ctx, cx, cy, r, color, opacity) {
-  const rgb = hexToRgb(color);
+// 부드러운 후광(glow) — public/index.html의 radialGradient(4단 stop)와 같은 느낌으로,
+// 중심의 밝은 색에서 바깥으로 천천히 번지며 사라지게 한다.
+function drawGlow(ctx, cx, cy, r, lightColor, mainColor, opacity) {
+  const rgbL = hexToRgb(lightColor);
+  const rgbM = hexToRgb(mainColor);
   const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-  grad.addColorStop(0, `rgba(${rgb},${opacity})`);
-  grad.addColorStop(0.6, `rgba(${rgb},${opacity * 0.35})`);
-  grad.addColorStop(1, `rgba(${rgb},0)`);
+  grad.addColorStop(0, `rgba(${rgbL},${(opacity * 0.9).toFixed(2)})`);
+  grad.addColorStop(0.35, `rgba(${rgbM},${(opacity * 0.7).toFixed(2)})`);
+  grad.addColorStop(0.7, `rgba(${rgbM},${(opacity * 0.22).toFixed(2)})`);
+  grad.addColorStop(1, `rgba(${rgbM},0)`);
   ctx.save();
   ctx.fillStyle = grad;
   ctx.beginPath();
@@ -85,7 +88,7 @@ function drawLogoTrophy(ctx, x, y, size, style) {
   const cx = x + 16 * s, cy = y + 15 * s;
 
   // 후광
-  drawGlow(ctx, cx, cy, size * 0.52, style.main, 0.5);
+  drawGlow(ctx, cx, cy, size * 0.6, style.light, style.main, 0.5);
 
   // 반짝이 (아이콘 주변에 흩뿌림)
   drawSparkle(ctx, x + 2 * s, y + 4 * s, size * 0.05, style.light, 0.9);
@@ -113,7 +116,7 @@ function drawLogoTrophy(ctx, x, y, size, style) {
   ctx.bezierCurveTo(11.5, 22, 8, 18.5, 8, 13);
   ctx.closePath();
   ctx.fillStyle = style.main;
-  ctx.globalAlpha = 0.12;
+  ctx.globalAlpha = 0.1;
   ctx.fill();
   ctx.globalAlpha = 1;
   ctx.lineWidth = 1.7;
@@ -136,16 +139,6 @@ function drawLogoTrophy(ctx, x, y, size, style) {
   // 기둥 + 받침대
   ctx.beginPath(); ctx.moveTo(16, 22); ctx.lineTo(16, 26); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(11, 28); ctx.lineTo(21, 28); ctx.stroke();
-
-  // 별 포인트
-  ctx.fillStyle = style.light;
-  ctx.beginPath();
-  ctx.moveTo(16, 8.8);
-  ctx.lineTo(17, 11.3); ctx.lineTo(19.7, 11.5); ctx.lineTo(17.6, 13.1);
-  ctx.lineTo(18.3, 15.7); ctx.lineTo(16, 14.2); ctx.lineTo(13.7, 15.7);
-  ctx.lineTo(14.4, 13.1); ctx.lineTo(12.3, 11.5); ctx.lineTo(15, 11.3);
-  ctx.closePath();
-  ctx.fill();
 
   ctx.restore();
 }
@@ -301,23 +294,23 @@ export async function renderTrophyCardPNG({ appId, gameName, picks }) {
 
   // 골드 (위쪽 중앙, 크게)
   drawSlot(ctx, {
-    cx: W / 2, top: 110, size: 380,
+    cx: W / 2, top: 70, size: 210,
     style: byslot.gold ? SLOT_STYLE.gold : { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' },
-    label: '1ST · GOLD', pick: byslot.gold, nameFont: 38, rarityFont: 22
+    label: '1ST · GOLD', pick: byslot.gold, nameFont: 26, rarityFont: 16
   });
 
   // 실버 (좌하단, 중간)
   drawSlot(ctx, {
-    cx: W * 0.278, top: 660, size: 240,
+    cx: W * 0.235, top: 310, size: 132,
     style: byslot.silver ? SLOT_STYLE.silver : { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' },
-    label: '2ND · SILVER', pick: byslot.silver, nameFont: 25, rarityFont: 17
+    label: '2ND · SILVER', pick: byslot.silver, nameFont: 17, rarityFont: 12
   });
 
   // 브론즈 (우하단, 조금 더 작게)
   drawSlot(ctx, {
-    cx: W * 0.74, top: 660, size: 204,
+    cx: W * 0.765, top: 322, size: 112,
     style: byslot.bronze ? SLOT_STYLE.bronze : { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' },
-    label: '3RD · BRONZE', pick: byslot.bronze, nameFont: 22, rarityFont: 15
+    label: '3RD · BRONZE', pick: byslot.bronze, nameFont: 15, rarityFont: 11
   });
 
   return canvas.toBuffer('image/png');
