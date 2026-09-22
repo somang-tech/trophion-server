@@ -115,13 +115,13 @@
   .tpl-top{display:flex;justify-content:flex-end;align-items:center;width:100%;margin-bottom:6px;}
   .tpl-slot{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;}
   .tpl-gold{width:100%;padding-block:4px 6px;}
-  .tpl-gold .tpl-medal{width:210px;height:269px;transform:rotate(-3deg);filter:drop-shadow(0 14px 26px rgba(0,0,0,.55));}
+  .tpl-gold .tpl-medal{width:190px;height:190px;transform:rotate(-3deg);filter:drop-shadow(0 14px 26px rgba(0,0,0,.55));}
   .tpl-gold .tpl-name{font-size:21px;}
   .tpl-gold .tpl-rarity{font-size:13.5px;}
   .tpl-row2{display:flex;gap:26px;width:100%;margin-top:14px;align-items:flex-end;justify-content:center;}
   .tpl-silver,.tpl-bronze{flex:0 1 190px;min-width:0;}
-  .tpl-silver .tpl-medal{width:138px;height:177px;transform:rotate(5deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.5));}
-  .tpl-bronze .tpl-medal{width:112px;height:143px;transform:rotate(-7deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.5));}
+  .tpl-silver .tpl-medal{width:128px;height:128px;transform:rotate(5deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.5));}
+  .tpl-bronze .tpl-medal{width:104px;height:104px;transform:rotate(-7deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.5));}
   .tpl-silver .tpl-name{font-size:14px;}
   .tpl-bronze .tpl-name{font-size:12.5px;}
   .tpl-silver .tpl-rarity,.tpl-bronze .tpl-rarity{font-size:11px;}
@@ -300,6 +300,16 @@
     epic:     {label:'EPIC',     color:'var(--gold)'},
     legendary:{label:'LEGENDARY',color:'var(--platinum)'}
   };
+  var TIER_RANK = { legendary:4, epic:3, rare:2, common:1 };
+  /* 깬 업적을 위로, 그 안에서는 등급 높은 순(legendary>epic>rare>common)으로 정렬.
+     안 깬 업적도 마찬가지로 등급 높은 순으로 정렬해서 아래쪽에 배치한다. */
+  function sortForDisplay(list){
+    return list.map(function(a,i){ return {a:a, i:i}; }).sort(function(x,y){
+      if(x.a.unlocked !== y.a.unlocked) return x.a.unlocked ? -1 : 1;
+      var r = (TIER_RANK[y.a.tier]||0) - (TIER_RANK[x.a.tier]||0);
+      return r !== 0 ? r : x.i - y.i;
+    }).map(function(w){ return w.a; });
+  }
   var SLOTS = [
     {key:'gold',   label:'1ST · GOLD',   color:'var(--gold)',   dim:'var(--gold-dim)',   lt:'var(--gold-lt)'},
     {key:'silver', label:'2ND · SILVER', color:'var(--silver)', dim:'var(--silver-dim)', lt:'var(--silver-lt)'},
@@ -367,52 +377,29 @@
     '</svg>';
   }
 
-  /* ---- 큰 트로피 컵 SVG (금/은/동 템플릿) ----
-     헤더 로고의 트로피(볼+손잡이 2개+별+기둥+받침대) 실루엣은 그대로 유지하되,
-     더 뚱뚱하고 화려하게: 넓은 벌브형 볼, 장식 림밴드, 메달리온 링+별, 반짝이 포인트,
-     2단 받침대, 두꺼운 손잡이로 업그레이드했다. */
+  /* ---- 큰 트로피 SVG (금/은/동 템플릿) ----
+     사이트 헤더의 TROPHION 로고(.brand-mark)와 정확히 같은 패스 데이터를 그대로 키워서 쓴다
+     (볼 M8 6H24V13C…, 손잡이 2개, 기둥, 받침대) — "우리 로고랑 최대한 비슷하게"라는 요청에
+     맞춰, 로고와 다른 실루엣을 새로 만드는 대신 로고 자체를 확대·채색한 버전이다.
+     로고는 얇은 선 아이콘이라 그대로 키우면 허전해서 볼 안쪽을 그라디언트로 채우고,
+     가운데 작은 별 하나만 포인트로 추가했다. */
   function bigTrophySvg(slot, size, empty){
     var main = empty ? '#3a3f4e' : resolveColor(slot.color);
     var dim  = empty ? '#262a37' : resolveColor(slot.dim);
     var lt   = empty ? '#5c6175' : resolveColor(slot.lt);
     var gid = 'tg-'+slot.key+(empty?'e':'');
-    var rid = 'tr-'+slot.key+(empty?'e':'');
-    var h = Math.round(size*1.28);
-    var sparkleOp = empty ? 0 : .8;
-    return '<svg width="'+size+'" height="'+h+'" viewBox="0 0 100 128" aria-hidden="true">'+
-      '<defs>'+
-        '<linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'+
-          '<stop offset="0" stop-color="'+lt+'"/><stop offset=".4" stop-color="'+main+'"/><stop offset="1" stop-color="'+dim+'"/>'+
-        '</linearGradient>'+
-        '<radialGradient id="'+rid+'" cx=".5" cy=".5" r=".5">'+
-          '<stop offset="0" stop-color="'+lt+'"/><stop offset="1" stop-color="'+main+'"/>'+
-        '</radialGradient>'+
-      '</defs>'+
-      /* 손잡이 (두껍고 크게 바깥으로 휘어지는 형태) */
-      '<path d="M27 21 C6 25 5 45 23 52" fill="none" stroke="'+dim+'" stroke-width="8" stroke-linecap="round"/>'+
-      '<path d="M73 21 C94 25 95 45 77 52" fill="none" stroke="'+dim+'" stroke-width="8" stroke-linecap="round"/>'+
-      '<path d="M27 21 C6 25 5 45 23 52" fill="none" stroke="'+main+'" stroke-width="3" stroke-linecap="round" opacity=".6"/>'+
-      '<path d="M73 21 C94 25 95 45 77 52" fill="none" stroke="'+main+'" stroke-width="3" stroke-linecap="round" opacity=".6"/>'+
-      /* 볼(넓고 둥근 벌브형) */
-      '<path d="M28 14 C13 14 9 35 16 47 C21 57 33 65 50 65 C67 65 79 57 84 47 C91 35 87 14 72 14 Z" fill="url(#'+gid+')" stroke="'+dim+'" stroke-width="2.2"/>'+
-      /* 상단 림 밴드 */
-      '<path d="M22 15 C22 10 35 7 50 7 C65 7 78 10 78 15 C78 19 65 16 50 16 C35 16 22 19 22 15 Z" fill="'+lt+'" stroke="'+dim+'" stroke-width="1.4"/>'+
-      /* 메달리온 링 + 별 */
-      '<circle cx="50" cy="38" r="16" fill="none" stroke="'+dim+'" stroke-width="1.8" opacity=".55"/>'+
-      '<circle cx="50" cy="38" r="12.5" fill="url(#'+rid+')"/>'+
-      '<path d="M50 27 L53.6 35.2 62.5 36.1 55.8 42 57.7 50.8 50 46.2 42.3 50.8 44.2 42 37.5 36.1 46.4 35.2 Z" fill="'+lt+'"/>'+
-      /* 어깨 반짝이 */
-      '<path d="M20 27 L21.6 30.6 25.2 31 22.4 33.4 23.2 37 20 35 16.8 37 17.6 33.4 14.8 31 18.4 30.6 Z" fill="'+lt+'" opacity="'+sparkleOp+'"/>'+
-      '<path d="M80 27 L81.6 30.6 85.2 31 82.4 33.4 83.2 37 80 35 76.8 37 77.6 33.4 74.8 31 78.4 30.6 Z" fill="'+lt+'" opacity="'+sparkleOp+'"/>'+
-      /* 광택 하이라이트 */
-      '<ellipse cx="35" cy="32" rx="6.5" ry="15" fill="#ffffff" opacity="'+(empty?'.06':'.24')+'" transform="rotate(-8 35 32)"/>'+
-      /* 목/기둥 */
-      '<path d="M42 65 H58 V72 C58 75 55 76 50 76 C45 76 42 75 42 72 Z" fill="'+dim+'"/>'+
-      '<rect x="45" y="76" width="10" height="16" fill="url(#'+gid+')" stroke="'+dim+'" stroke-width="1.4"/>'+
-      /* 2단 받침대 */
-      '<path d="M31 92 H69 L75 106 H25 Z" fill="'+dim+'" stroke="'+main+'" stroke-width="1" opacity=".95"/>'+
-      '<rect x="20" y="106" width="60" height="10" rx="2.5" fill="url(#'+gid+')" stroke="'+dim+'" stroke-width="1.6"/>'+
-      '<rect x="30" y="109.5" width="40" height="2.4" rx="1.2" fill="'+lt+'" opacity="'+(empty?'.15':'.45')+'"/>'+
+    var sw = (size/32*2.6).toFixed(2);      // 손잡이/기둥/받침대 두께 (로고의 2px를 비율대로 확대)
+    var bodySw = (size/32*1.4).toFixed(2);  // 볼 테두리는 조금 더 얇게
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 32 32" aria-hidden="true">'+
+      '<defs><linearGradient id="'+gid+'" x1="4" y1="6" x2="28" y2="28">'+
+        '<stop offset="0" stop-color="'+lt+'"/><stop offset=".5" stop-color="'+main+'"/><stop offset="1" stop-color="'+dim+'"/>'+
+      '</linearGradient></defs>'+
+      '<path d="M8 6H24V13C24 18.5 20.5 22 16 22C11.5 22 8 18.5 8 13V6Z" fill="url(#'+gid+')" stroke="'+dim+'" stroke-width="'+bodySw+'"/>'+
+      '<path d="M8 8H4V11C4 14 6 16 9 16" fill="none" stroke="url(#'+gid+')" stroke-width="'+sw+'" stroke-linecap="round"/>'+
+      '<path d="M24 8H28V11C28 14 26 16 23 16" fill="none" stroke="url(#'+gid+')" stroke-width="'+sw+'" stroke-linecap="round"/>'+
+      '<path d="M16 22V26" stroke="url(#'+gid+')" stroke-width="'+sw+'"/>'+
+      '<path d="M11 28H21" stroke="url(#'+gid+')" stroke-width="'+sw+'" stroke-linecap="round"/>'+
+      '<path d="M16 8.8 L17 11.3 19.7 11.5 17.6 13.1 18.3 15.7 16 14.2 13.7 15.7 14.4 13.1 12.3 11.5 15 11.3 Z" fill="'+lt+'" opacity="'+(empty?'.35':'.95')+'"/>'+
     '</svg>';
   }
 
@@ -639,13 +626,13 @@
       '<span class="tpl-rarity">'+t('tplRarity')(a.globalPct.toFixed(1))+'</span>';
   }
   function renderTemplate(g, byslot){
-    renderSlot(document.getElementById('tplGold'),   SLOTS[0], 210, g, byslot.gold);
-    renderSlot(document.getElementById('tplSilver'), SLOTS[1], 138, g, byslot.silver);
-    renderSlot(document.getElementById('tplBronze'), SLOTS[2], 112, g, byslot.bronze);
+    renderSlot(document.getElementById('tplGold'),   SLOTS[0], 190, g, byslot.gold);
+    renderSlot(document.getElementById('tplSilver'), SLOTS[1], 128, g, byslot.silver);
+    renderSlot(document.getElementById('tplBronze'), SLOTS[2], 104, g, byslot.bronze);
   }
 
   function renderRack(g){
-    var unlocked = g.achievements.filter(function(a){ return a.unlocked; });
+    var unlocked = sortForDisplay(g.achievements.filter(function(a){ return a.unlocked; }));
     document.getElementById('rackHint').textContent = t('rackHint')(unlocked.length, g.achTotal);
     var rack = document.getElementById('medalRack');
     if(unlocked.length===0){
@@ -666,7 +653,7 @@
     state.picks.forEach(function(p){ slotForApiName[p.achievementApiName] = p.slot; });
 
     var grid = document.getElementById('achGrid');
-    grid.innerHTML = g.achievements.map(function(a){
+    grid.innerHTML = sortForDisplay(g.achievements).map(function(a){
       var slot = slotForApiName[a.apiName];
       var slotDef = slot ? SLOTS.find(function(s){return s.key===slot;}) : null;
       var cls = 'ach'+(a.unlocked?'':' locked')+(slot?' picked':'');
