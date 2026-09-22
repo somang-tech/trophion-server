@@ -296,6 +296,49 @@ CSS는 데모(`trophion.html`)의 CSS를 그대로 가져오고 데이터 소스
 받아오는 텍스트가 영어로 바뀐다. 계속 한글로 나온다면 재동기화를 안 한 것이거나, 배포가
 최신 코드로 안 올라간 것일 수 있으니 확인 부탁드린다.
 
+## 트로피 카드 6차 수정 — html2canvas 완전히 버리고 다시 서버 렌더링으로
+
+지난 라운드에서 "다운로드가 미리보기랑 다르다"는 문제를 `html2canvas`(화면 DOM을 그대로
+캡처)로 해결하려 했었는데, 실제로 적용해보니 `html2canvas` 자체의 한계 두 가지에 부딪혔다:
+
+- **`background-clip: text`를 지원하지 않는다** — "TROPHION" 워드마크는 CSS로
+  `background-clip: text` + `color: transparent`를 써서 그라디언트 텍스트를 흉내 낸
+  것인데, `html2canvas`는 이걸 못 읽고 그냥 깨진/픽셀 덩어리로 캡처해버린다. 다운로드
+  이미지 우측 상단 로고가 "픽셀로 만든" 것처럼 보인 게 이것 때문이었다.
+- **`object-fit: cover`를 지원하지 않는다** — 배경 커버 사진(`<img class="tpl-bg">`)에
+  적용된 `object-fit: cover`를 무시하고 원본 이미지를 박스 크기에 맞춰 그냥 늘려버려서,
+  다운로드된 배경 사진이 찌그러져 보였다.
+
+둘 다 라이브러리 자체의 한계라 프론트 코드를 고쳐서 해결할 수 있는 문제가 아니었다.
+그래서 방향을 다시 바꿨다:
+
+- `public/index.html`에서 `html2canvas` `<script>` 태그와 관련 다운로드 핸들러를
+  완전히 제거했다. 다운로드 버튼은 이제 그냥 `fetch('/api/games/:appId/card.png')`로
+  서버가 렌더링한 PNG를 받아서 저장한다.
+- `src/shareCard.js`에 새 함수 `renderDownloadCardPNG()`를 추가했다. 공유용 OG 이미지
+  (`renderTrophyCardPNG`, 고정 1200×630)와 레이아웃 로직(`paintCard`)을 공유하지만,
+  캔버스 크기를 **그 게임 커버 이미지의 실제 가로세로 비율**에 맞춰서 만든다
+  (`aspect = cover.width/cover.height`) — 그래서 크롭도, 찌그러짐도 없이 배경 사진
+  본래 비율 그대로 다운로드된다. 관련 라우트 `GET /api/games/:appId/card.png`
+  (`src/routes/games.js`, 로그인 필요)도 새로 추가했다.
+- `paintCard()`의 배경 사진 그리기 방식도 `object-fit: cover`와 동일한 방식(비율 유지 +
+  중앙 크롭, `Math.max(W/cover.width, H/cover.height)`)으로 바꿨다. 다운로드 카드는
+  캔버스 비율을 커버 사진 비율에 맞춰서 만들기 때문에 크롭이 전혀 일어나지 않지만, 고정
+  1200×630인 OG 공유 이미지 쪽은 커버 사진 비율이 다를 수 있어서 예전처럼
+  `drawImage(cover,0,0,W,H)`로 그냥 늘려 그리면 배경이 찌그러지는 문제가 있었다 — 이걸
+  구조적으로 막았다.
+- 트로피 후광(glow)도 이번에 한 번 더 다듬었다: 별(sparkle)은 이번에도 안 넣었고,
+  후광 색을 단일 색상 5단 그라디언트로 바꾸면서 최고 opacity를 낮추고(`.3`) 반경을
+  넓혀서, 화면에 보이는 아이콘의 후광이 원판처럼 뚝 끊기지 않고 더 자연스럽게 번지도록
+  했다(`public/index.html`의 `bigTrophySvg()`와 `shareCard.js`의 `drawGlow()` 둘 다
+  동일한 방식으로 맞춤).
+
+**참고**: 우측 상단 "TROPHION" 워드마크는 이제 서버가 실제 폰트로 글자를 그려서
+(`ctx.fillText`) 만들기 때문에 픽셀 깨짐 문제는 재현되지 않는다. 다만 진짜 Bebas Neue
+폰트는 이 개발 환경의 네트워크 제한 때문에 여전히 받아올 수 없어서, 가장 비슷한 대체
+서체(Big Shoulders Bold)를 쓰고 있다 — 폰트 자체가 100% 동일하진 않지만, 최소한 텍스트가
+깨지거나 안 보이는 문제는 없다.
+
 ## 다음으로 손볼만한 것들
 
 - **레이트리밋 & 재시도**: Steam Web API가 가끔 429/timeout을 준다. `sync` 라우트에 재시도·

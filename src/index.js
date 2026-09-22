@@ -86,6 +86,7 @@ app.get('/api', (req, res) => {
       'POST /api/games/sync          → Steam에서 게임/업적 재동기화 (로그인 필요)',
       'GET  /api/games                → 내 게임 목록 (완료율순, coverUrl 포함)',
       'GET  /api/games/:appId/achievements → 게임별 업적 목록 (iconUrl 포함)',
+      'GET  /api/games/:appId/card.png → 트로피 카드 PNG 다운로드 (로그인 필요, 커버 사진 실제 비율에 맞춤)',
       'GET  /api/trophies?appId=...  → 게임별 트로피케이스(금/은/동) 조회',
       'POST /api/trophies             → 트로피케이스에 업적 등록/교체',
       'DEL  /api/trophies?appId=&slot= → 트로피케이스에서 제거',

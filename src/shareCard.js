@@ -1,15 +1,18 @@
-// 디스코드/트위터 링크 미리보기(OG 이미지, <meta property="og:image">)용 PNG 렌더러.
-// "이미지 다운로드" 버튼은 더 이상 이 파일을 안 쓴다 — public/index.html이 화면에 보이는
-// 트로피 카드를 html2canvas로 그대로 캡처해서 내려받기 때문에(진짜 화면과 100% 동일),
-// 여기 서버 렌더러는 JS를 실행할 수 없는 링크 미리보기 상황에서만 쓰인다. 그래서 크기도
-// OG 이미지 표준 비율(1200x630)로 유지한다.
+// 트로피 카드 PNG 렌더러. 두 곳에서 쓰인다:
+//   1) GET /u/:steamId64/:appId.png — 디스코드/트위터 링크 미리보기(OG 이미지). JS를 실행할
+//      수 없는 상황이라 항상 서버 렌더링이 필요하고, 크기는 OG 표준 비율(1200x630)로 고정.
+//   2) GET /api/games/:appId/card.png — "이미지 다운로드" 버튼. html2canvas로 화면을 그대로
+//      캡처하는 방식을 시도했었지만, background-clip:text(그라디언트 워드마크)를 깨진
+//      픽셀 블록으로 그리고 object-fit:cover를 무시해서 배경 사진이 찌그러지는 등
+//      html2canvas 자체의 한계에 계속 부딪혀서 다시 서버 렌더링으로 돌아왔다. 대신 이번엔
+//      캔버스 크기를 해당 게임 커버 이미지의 실제 가로세로 비율에 맞춰서 만들기 때문에
+//      크롭도, 찌그러짐도 없다.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';
 import { steamCoverUrlCandidates } from './steamApi.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const W = 1200, H = 630; // OG 이미지 표준 비율
 
 // Railway 같은 최소 컨테이너에는 시스템 폰트가 아예 없을 수 있다 — 그러면 @napi-rs/canvas가
 // 도형(패스/그라디언트)은 정상적으로 그리면서도 ctx.fillText만 조용히 아무것도 안 그린다
@@ -43,16 +46,16 @@ function hexToRgb(hex) {
   return m ? `${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)}` : '255,255,255';
 }
 
-// 부드러운 후광(glow) — public/index.html의 radialGradient(4단 stop)와 같은 느낌으로,
-// 중심의 밝은 색에서 바깥으로 천천히 번지며 사라지게 한다.
-function drawGlow(ctx, cx, cy, r, lightColor, mainColor, opacity) {
-  const rgbL = hexToRgb(lightColor);
-  const rgbM = hexToRgb(mainColor);
+// 아주 은은한 후광 — public/index.html의 bigTrophySvg()와 같은 5단 그라디언트로,
+// 경계가 뚝 끊기지 않고 배경에 자연스럽게 녹아들도록 반경을 넓고 opacity를 낮게 잡았다.
+function drawGlow(ctx, cx, cy, r, color, peakOpacity) {
+  const rgb = hexToRgb(color);
   const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-  grad.addColorStop(0, `rgba(${rgbL},${(opacity * 0.9).toFixed(2)})`);
-  grad.addColorStop(0.35, `rgba(${rgbM},${(opacity * 0.7).toFixed(2)})`);
-  grad.addColorStop(0.7, `rgba(${rgbM},${(opacity * 0.22).toFixed(2)})`);
-  grad.addColorStop(1, `rgba(${rgbM},0)`);
+  grad.addColorStop(0, `rgba(${rgb},${peakOpacity.toFixed(2)})`);
+  grad.addColorStop(0.3, `rgba(${rgb},${(peakOpacity * 0.72).toFixed(2)})`);
+  grad.addColorStop(0.55, `rgba(${rgb},${(peakOpacity * 0.4).toFixed(2)})`);
+  grad.addColorStop(0.78, `rgba(${rgb},${(peakOpacity * 0.14).toFixed(2)})`);
+  grad.addColorStop(1, `rgba(${rgb},0)`);
   ctx.save();
   ctx.fillStyle = grad;
   ctx.beginPath();
@@ -61,41 +64,16 @@ function drawGlow(ctx, cx, cy, r, lightColor, mainColor, opacity) {
   ctx.restore();
 }
 
-// 4~8각 반짝이(스파클) 별 하나.
-function drawSparkle(ctx, cx, cy, r, color, opacity) {
-  ctx.save();
-  ctx.globalAlpha = opacity;
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  for (let i = 0; i < 8; i++) {
-    const rr = i % 2 === 0 ? r : r * 0.28;
-    const a = (Math.PI / 4) * i;
-    const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
 // 사이트 헤더의 TROPHION 로고(.brand-mark)와 정확히 같은 패스 데이터를 그대로 확대해서 쓴다
 // (볼 M8 6H24V13C…, 손잡이 2개, 기둥, 받침대 — viewBox 0 0 32 32). 로고는 얇은 "선" 아이콘이라
 // 볼 안쪽을 진하게 채우면 두 커브가 바닥 한 점(16,22)에서 뾰족하게 만나는 부분이 도드라져서
 // 트로피가 아니라 이상한 두 쪽짜리 덩어리처럼 보인다 — 그래서 채우지 않고 로고와 동일하게
-// "선" 위주로 그리되, 뒤에 은은한 후광(glow)과 반짝이(sparkle)를 더해서 화려한 느낌을 낸다.
+// "선" 위주로 그리고, 뒤에 아주 은은한 후광만 더한다(반짝이는 뺐다 — 너무 산만하다는 피드백).
 function drawLogoTrophy(ctx, x, y, size, style) {
   const s = size / 32;
   const cx = x + 16 * s, cy = y + 15 * s;
 
-  // 후광
-  drawGlow(ctx, cx, cy, size * 0.6, style.light, style.main, 0.5);
-
-  // 반짝이 (아이콘 주변에 흩뿌림)
-  drawSparkle(ctx, x + 2 * s, y + 4 * s, size * 0.05, style.light, 0.9);
-  drawSparkle(ctx, x + 30 * s, y + 1 * s, size * 0.035, style.light, 0.75);
-  drawSparkle(ctx, x + 29 * s, y + 26 * s, size * 0.045, style.light, 0.85);
-  drawSparkle(ctx, x - 1 * s, y + 23 * s, size * 0.03, style.light, 0.6);
-  drawSparkle(ctx, x + 16 * s, y - 4 * s, size * 0.03, style.light, 0.55);
+  drawGlow(ctx, cx, cy, size * 0.7, style.main, 0.3);
 
   const grad = ctx.createLinearGradient(x + 4 * s, y + 6 * s, x + 28 * s, y + 28 * s);
   grad.addColorStop(0, style.light);
@@ -177,7 +155,7 @@ function drawWordmark(ctx, text, x, y, px, spacing) {
   ctx.save();
   ctx.font = `${px}px "${FONT_DISPLAY}"`;
   ctx.textBaseline = 'alphabetic';
-  let widths = [];
+  const widths = [];
   let total = 0;
   for (const ch of text) {
     const w = ctx.measureText(ch).width;
@@ -241,30 +219,29 @@ function drawSlot(ctx, { cx, top, size, style, label, pick, nameFont, rarityFont
   ctx.textAlign = 'left';
 }
 
-export async function renderTrophyCardPNG({ appId, gameName, picks }) {
-  // picks: [{ slot: 'gold'|'silver'|'bronze', name, rarityPct }] (없는 슬롯은 생략 가능)
-  const canvas = createCanvas(W, H);
-  const ctx = canvas.getContext('2d');
-
-  // 배경 베이스
+// 카드 본체를 그린다 — OG용/다운로드용 둘 다 이 함수를 공유하고, W/H와 cover만 다르게 넘긴다.
+// cover 그리기는 항상 object-fit:cover 방식(비율 유지 + 필요한 만큼만 중앙 크롭)으로 처리한다.
+// renderDownloadCardPNG는 애초에 W:H를 cover의 실제 비율에 맞춰서 넘기기 때문에 이 경우
+// 크롭이 전혀 발생하지 않고(스케일=1), renderTrophyCardPNG(고정 1200x630 OG 이미지)처럼
+// cover 비율이 캔버스 비율과 다른 경우에도 절대 찌그러지지(늘어나지) 않는다 — 예전엔
+// drawImage(cover,0,0,W,H)로 강제로 늘려 그려서 OG 이미지에서 배경이 찌부러지는 문제가
+// 있었다.
+function paintCard(ctx, W, H, { gameName, picks, cover }) {
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, '#1c2030');
   bg.addColorStop(1, '#0a0b10');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  // 게임 커버 이미지를 배경에 은은하게 오버랩 (화면 대시보드와 동일한 연출).
-  // cover(꽉 채우기)가 아니라 contain(안 잘리게 전체를 보여주기)으로 맞춘다 — 정사각형
-  // 캔버스에 보통 16:9 커버 이미지를 채우면 위아래/좌우가 크게 잘려나가기 때문에,
-  // 이미지 전체가 다 보이도록 비율 유지한 채 안쪽에 맞추고 남는 여백은 배경 그라디언트가
-  // 채우게 한다.
-  const cover = await loadBackgroundCover(appId);
   if (cover) {
+    const scale = Math.max(W / cover.width, H / cover.height);
+    const dw = cover.width * scale;
+    const dh = cover.height * scale;
+    const dx = (W - dw) / 2;
+    const dy = (H - dh) / 2;
     ctx.save();
-    ctx.globalAlpha = 0.3;
-    const scale = Math.min(W / cover.width, H / cover.height);
-    const dw = cover.width * scale, dh = cover.height * scale;
-    ctx.drawImage(cover, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    ctx.globalAlpha = 0.32;
+    ctx.drawImage(cover, dx, dy, dw, dh);
     ctx.restore();
     const shade = ctx.createRadialGradient(W / 2, H * 0.08, H * 0.18, W / 2, H * 0.5, H * 0.98);
     shade.addColorStop(0, 'rgba(28,32,48,.3)');
@@ -274,44 +251,67 @@ export async function renderTrophyCardPNG({ appId, gameName, picks }) {
     ctx.fillRect(0, 0, W, H);
   }
 
-  // 헤더: 좌측 게임명, 우측 TROPHION 브랜드
+  // 헤더: 좌측 게임명, 우측 TROPHION 브랜드 — 캔버스 폭에 비례해서 크기를 잡는다.
   ctx.textAlign = 'left';
   ctx.fillStyle = '#9498a8';
-  ctx.font = font(26, true);
-  ctx.fillText(gameName.toUpperCase(), 54, 66);
+  const headerFont = Math.round(W * 0.0217);
+  ctx.font = font(headerFont, true);
+  ctx.fillText(gameName.toUpperCase(), W * 0.045, H * 0.105);
 
-  const wmSize = 24;
+  const wmSize = Math.round(W * 0.02);
   const wmText = 'TROPHION';
   ctx.font = `${wmSize}px "${FONT_DISPLAY}"`;
   let wmWidth = 0;
   for (const ch of wmText) wmWidth += ctx.measureText(ch).width + 0.5;
   wmWidth -= 0.5;
-  const wmX = W - 54 - wmWidth - 38;
-  drawBrandMark(ctx, wmX, 42, 28);
-  drawWordmark(ctx, wmText, wmX + 38, 62, wmSize, 0.5);
+  const brandSize = Math.round(W * 0.0233);
+  const wmX = W - W * 0.045 - wmWidth - (brandSize + 10);
+  drawBrandMark(ctx, wmX, H * 0.067, brandSize);
+  drawWordmark(ctx, wmText, wmX + brandSize + 10, H * 0.098, wmSize, 0.5);
 
   const byslot = Object.fromEntries(picks.map((p) => [p.slot, p]));
+  const EMPTY_STYLE = { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' };
 
-  // 골드 (위쪽 중앙, 크게)
+  // 골드 (위쪽 중앙, 크게) / 실버(좌하단) / 브론즈(우하단) — 비율 기반 배치라 W/H가
+  // 바뀌어도(=게임 커버 비율이 달라져도) 항상 비슷한 구도를 유지한다.
   drawSlot(ctx, {
-    cx: W / 2, top: 70, size: 210,
-    style: byslot.gold ? SLOT_STYLE.gold : { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' },
-    label: '1ST · GOLD', pick: byslot.gold, nameFont: 26, rarityFont: 16
+    cx: W / 2, top: H * 0.111, size: W * 0.175,
+    style: byslot.gold ? SLOT_STYLE.gold : EMPTY_STYLE,
+    label: '1ST · GOLD', pick: byslot.gold, nameFont: Math.round(W * 0.0217), rarityFont: Math.round(W * 0.0133)
   });
-
-  // 실버 (좌하단, 중간)
   drawSlot(ctx, {
-    cx: W * 0.235, top: 310, size: 132,
-    style: byslot.silver ? SLOT_STYLE.silver : { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' },
-    label: '2ND · SILVER', pick: byslot.silver, nameFont: 17, rarityFont: 12
+    cx: W * 0.235, top: H * 0.492, size: W * 0.11,
+    style: byslot.silver ? SLOT_STYLE.silver : EMPTY_STYLE,
+    label: '2ND · SILVER', pick: byslot.silver, nameFont: Math.round(W * 0.0142), rarityFont: Math.round(W * 0.01)
   });
-
-  // 브론즈 (우하단, 조금 더 작게)
   drawSlot(ctx, {
-    cx: W * 0.765, top: 322, size: 112,
-    style: byslot.bronze ? SLOT_STYLE.bronze : { main: '#3a3f4e', dim: '#262a37', light: '#5c6175' },
-    label: '3RD · BRONZE', pick: byslot.bronze, nameFont: 15, rarityFont: 11
+    cx: W * 0.765, top: H * 0.511, size: W * 0.093,
+    style: byslot.bronze ? SLOT_STYLE.bronze : EMPTY_STYLE,
+    label: '3RD · BRONZE', pick: byslot.bronze, nameFont: Math.round(W * 0.0125), rarityFont: Math.round(W * 0.0092)
   });
+}
 
+// 1) 디스코드/트위터 OG 이미지 — 고정 1200x630.
+export async function renderTrophyCardPNG({ appId, gameName, picks }) {
+  const W = 1200, H = 630;
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext('2d');
+  const cover = await loadBackgroundCover(appId);
+  paintCard(ctx, W, H, { gameName, picks, cover });
+  return canvas.toBuffer('image/png');
+}
+
+// 2) "이미지 다운로드" 버튼 — 게임 커버 이미지의 실제 가로세로 비율에 캔버스를 맞춘다
+// (요청: "배경 사진 사이즈에 맞춰서" — 크롭도 찌그러짐도 없게). 커버를 못 찾으면 OG와
+// 같은 1200x630 비율로 대체한다.
+export async function renderDownloadCardPNG({ appId, gameName, picks }) {
+  const cover = await loadBackgroundCover(appId);
+  const aspect = cover ? cover.width / cover.height : 1200 / 630;
+  const TARGET_W = 1400;
+  const W = TARGET_W;
+  const H = Math.round(TARGET_W / aspect);
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext('2d');
+  paintCard(ctx, W, H, { gameName, picks, cover });
   return canvas.toBuffer('image/png');
 }

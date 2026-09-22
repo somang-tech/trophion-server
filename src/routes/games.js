@@ -12,6 +12,7 @@ import {
   steamCoverUrlCandidates,
   PROFILE_VISIBILITY_PUBLIC
 } from '../steamApi.js';
+import { renderDownloadCardPNG } from '../shareCard.js';
 
 export const gamesRouter = Router();
 
@@ -187,4 +188,35 @@ gamesRouter.get('/:appId/achievements', requireAuth, async (req, res) => {
   res.json({
     game: { ...game, coverUrl: steamCoverUrl(game.appId), coverUrls: steamCoverUrlCandidates(game.appId) }
   });
+});
+
+// "이미지 다운로드" 버튼이 부르는 엔드포인트 — html2canvas로 화면을 캡처하던 방식은
+// background-clip:text 워드마크가 깨진 픽셀 블록으로 나오고 배경 사진이 찌그러지는
+// 문제가 있어서, 서버가 같은 카드를 직접 렌더링해서 PNG로 내려준다. 로그인한 유저 본인의
+// 픽만 노출해야 하므로 /u/:steamId64/... (공개용)와 달리 requireAuth로 감싼다.
+gamesRouter.get('/:appId/card.png', requireAuth, async (req, res) => {
+  const appId = Number(req.params.appId);
+  const userId = req.session.userId;
+
+  const game = await prisma.gameCache.findUnique({
+    where: { userId_appId: { userId, appId } }
+  });
+  if (!game) return res.status(404).json({ error: '캐시된 게임이 없습니다. 먼저 동기화하세요.' });
+
+  const picks = await prisma.trophyPick.findMany({ where: { userId, appId } });
+  const achByName = Object.fromEntries(
+    (await prisma.achievementCache.findMany({ where: { gameId: game.id } })).map((a) => [a.apiName, a])
+  );
+  const picksResolved = picks
+    .map((p) => {
+      const a = achByName[p.achievementApiName];
+      if (!a) return null;
+      return { slot: p.slot, name: a.displayName, rarityPct: a.globalPct };
+    })
+    .filter(Boolean);
+
+  const png = await renderDownloadCardPNG({ appId: game.appId, gameName: game.name, picks: picksResolved });
+  res.set('Content-Type', 'image/png');
+  res.set('Content-Disposition', `attachment; filename="trophion-${appId}.png"`);
+  res.send(png);
 });
