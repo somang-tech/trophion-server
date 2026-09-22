@@ -9,9 +9,9 @@ import {
   getPlayerSummary,
   tierFromGlobalPct,
   steamCoverUrl,
+  steamCoverUrlCandidates,
   PROFILE_VISIBILITY_PUBLIC
 } from '../steamApi.js';
-import { localeFromCountry, steamLangForLocale } from '../locale.js';
 
 export const gamesRouter = Router();
 
@@ -52,8 +52,11 @@ gamesRouter.post('/sync', requireAuth, async (req, res) => {
     .sort((a, b) => (b.playtime_forever || 0) - (a.playtime_forever || 0))
     .slice(0, SYNC_GAME_LIMIT);
 
-  // 업적 이름/설명을 유저의 추정 언어로 받아온다 (한국이면 한글, 일본이면 일본어, 그 외는 영어).
-  const steamLang = steamLangForLocale(localeFromCountry(user.locCountryCode));
+  // Steam 공개 API는 계정의 실제 클라이언트 언어를 알려주지 않는다. 국가코드로 언어를
+  // 추정했더니 실제 설정과 안 맞는 경우가 많고, 그러면 업적 텍스트(추정 언어)와 사이트
+  // UI(영어)가 섞여 보이는 문제가 있었다. 그래서 항상 영어로 고정해서 사이트 전체의
+  // 언어를 일관되게 유지한다.
+  const steamLang = 'english';
 
   const synced = [];
   const skippedPrivateStats = [];
@@ -144,7 +147,9 @@ gamesRouter.get('/', requireAuth, async (req, res) => {
     where: { userId: req.session.userId },
     orderBy: [{ completionPct: 'desc' }, { rarityScore: 'desc' }]
   });
-  res.json({ games: games.map((g) => ({ ...g, coverUrl: steamCoverUrl(g.appId) })) });
+  res.json({
+    games: games.map((g) => ({ ...g, coverUrl: steamCoverUrl(g.appId), coverUrls: steamCoverUrlCandidates(g.appId) }))
+  });
 });
 
 // 헤더/히어로에 쓰는 집계 — GameCache만으로는 "평균 희귀도"를 못 구해서
@@ -179,5 +184,7 @@ gamesRouter.get('/:appId/achievements', requireAuth, async (req, res) => {
     include: { achievements: true }
   });
   if (!game) return res.status(404).json({ error: '캐시된 게임이 없습니다. 먼저 동기화하세요.' });
-  res.json({ game: { ...game, coverUrl: steamCoverUrl(game.appId) } });
+  res.json({
+    game: { ...game, coverUrl: steamCoverUrl(game.appId), coverUrls: steamCoverUrlCandidates(game.appId) }
+  });
 });

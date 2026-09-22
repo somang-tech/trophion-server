@@ -30,8 +30,8 @@ async function loadCardData(steamId64, appId) {
 shareRouter.get('/:steamId64/:appId.png', async (req, res) => {
   const data = await loadCardData(req.params.steamId64, Number(req.params.appId));
   if (!data) return res.status(404).send('Not found');
-  const png = renderTrophyCardPNG({
-    displayName: data.user.displayName,
+  const png = await renderTrophyCardPNG({
+    appId: data.game.appId,
     gameName: data.game.name,
     picks: data.picks
   });
@@ -44,19 +44,19 @@ shareRouter.get('/:steamId64/:appId.png', async (req, res) => {
 shareRouter.get('/:steamId64/:appId', async (req, res) => {
   const { steamId64, appId } = req.params;
   const data = await loadCardData(steamId64, Number(appId));
-  if (!data) return res.status(404).send('찾을 수 없는 프로필입니다.');
+  if (!data) return res.status(404).send('Profile not found.');
   const imageUrl = `${process.env.APP_BASE_URL}/u/${steamId64}/${appId}.png`;
   const pageUrl = `${process.env.APP_BASE_URL}/u/${steamId64}/${appId}`;
   res.set('Content-Type', 'text/html; charset=utf-8').send(`<!doctype html>
-<html lang="ko"><head>
+<html lang="en"><head>
 <meta charset="utf-8">
-<title>${data.user.displayName}의 ${data.game.name} 트로피케이스 — Trophion</title>
-<meta property="og:title" content="${data.user.displayName}의 ${data.game.name} 트로피케이스">
-<meta property="og:description" content="Trophion에서 가장 자랑스러운 업적 3개를 확인해보세요.">
+<title>${data.user.displayName}'s ${data.game.name} trophy case — Trophion</title>
+<meta property="og:title" content="${data.user.displayName}'s ${data.game.name} trophy case">
+<meta property="og:description" content="See the 3 achievements they're proudest of on Trophion.">
 <meta property="og:image" content="${imageUrl}">
 <meta property="og:url" content="${pageUrl}">
 <meta name="twitter:card" content="summary_large_image">
 </head><body style="margin:0;background:#0a0b10;display:flex;align-items:center;justify-content:center;min-height:100vh;">
-<img src="${imageUrl}" alt="트로피케이스" style="max-width:100%;height:auto;">
+<img src="${imageUrl}" alt="Trophy case" style="max-width:100%;height:auto;">
 </body></html>`);
 });

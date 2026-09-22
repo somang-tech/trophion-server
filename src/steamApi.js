@@ -14,6 +14,22 @@ export function steamCoverUrl(appId) {
   return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`;
 }
 
+// header.jpg가 없는 appid도 있다 — 베타/플레이테스트 전용 appid(정식 발매작과 다른 별도
+// appid로 라이브러리에 잡히는 경우, 예: "OOO Playtest"), 최근 출시라 CDN 캐시 반영이 늦은
+// 경우 등. 이럴 때도 대부분 store 페이지용 캡슐/라이브러리 이미지는 존재하므로 순서대로
+// 시도할 후보 URL 목록을 준다. 프론트(index.html)가 <img> 로드 실패 시 다음 후보로 넘어간다.
+export function steamCoverUrlCandidates(appId) {
+  const base = `https://cdn.akamai.steamstatic.com/steam/apps/${appId}`;
+  const shared = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}`;
+  return [
+    `${base}/header.jpg`,
+    `${base}/capsule_616x353.jpg`,
+    `${base}/library_header.jpg`,
+    `${shared}/capsule_616x353.jpg`,
+    `${base}/capsule_231x87.jpg`
+  ];
+}
+
 function withKey(url, key) {
   const u = new URL(url);
   u.searchParams.set('key', key);

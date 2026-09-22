@@ -99,23 +99,25 @@ CSS는 데모(`trophion.html`)의 CSS를 그대로 가져오고 데이터 소스
 `skippedPrivateStats` 배열에 건너뛴 게임 이름을 모아 돌려준다 — 프론트에서 "이 게임들은
 업적 정보가 비공개라 제외됐어요" 같은 안내에 쓰면 된다.
 
-## 다국어(i18n) — 로그인한 Steam 유저 언어 / IP 지역 자동 감지
+## 언어 — 전체 영어로 고정 (더 이상 자동 감지 안 함)
 
-`public/index.html`의 모든 UI 문구는 `I18N = { ko, en, ja }` 딕셔너리 + `t(key)` 헬퍼로 통일
-되어 있다. 언어 결정 순서:
+원래는 Steam 계정의 국가코드(`loccountrycode`)나 접속 IP로 언어를 추정해서 한국어/일본어/
+영어를 자동 전환하려고 했는데, 두 가지 문제가 있었다:
 
-1. **로그인 후** → Steam 로그인 콜백(`/auth/steam/callback`)에서 `GetPlayerSummaries`가 주는
-   `loccountrycode`(예: `KR`, `JP`, `US`)를 `User.locCountryCode`에 저장 → `GET /auth/me`가
-   `locale: localeFromCountry(user.locCountryCode)`를 함께 내려준다.
-2. **로그인 전(게이트 화면)** → Steam 국가 정보가 아직 없으므로, 서버가 접속 IP를
-   `geoip-lite`(오프라인 DB, 런타임에 외부 호출 없음)로 조회해서 `GET /api/locale`이
-   `{ locale, country }`를 내려준다. Railway 같은 프록시 뒤 환경을 고려해 `X-Forwarded-For`를
-   우선 본다.
-3. 국가 코드 → 언어 매핑은 `src/locale.js`의 `COUNTRY_TO_LOCALE`(`KR→ko`, `JP→ja`, 그 외 `en`)
-   하나로 관리되며, 같은 파일의 `steamLangForLocale()`이 Steam Web API 호출용 언어 코드
-   (`koreana`/`japanese`/`english`)로도 변환해준다 — 그래서 업적 이름/설명 자체도
-   `GetPlayerAchievements`/`GetSchemaForGame` 호출 시 유저 언어로 받아온다
-   (`src/steamApi.js`의 `lang` 파라미터, `src/routes/games.js`의 `sync`에서 사용).
+1. Steam 공개 API는 계정의 **실제 클라이언트 언어 설정**을 알려주지 않는다. 국가코드는 그냥
+   프로필에 등록된 국가일 뿐이라 실제 UI 언어와 다른 경우가 흔하다.
+2. 그 결과 "사이트 UI는 영어인데 업적 텍스트만 한국어로 와서 짬뽕처럼 보이는" 문제가 생겼다.
+
+그래서 신뢰할 수 없는 추정을 걷어내고 **전체를 영어로 고정**했다:
+- `public/index.html`의 `locale` 변수가 `boot()`에서 무조건 `'en'`으로 설정된다
+  (`I18N.ko`/`I18N.ja` 딕셔너리 자체는 나중에 다시 쓸 수 있게 남겨뒀다).
+- `src/routes/games.js`의 `/sync`가 Steam Web API에서 업적 이름/설명을 받아올 때
+  항상 `steamLang = 'english'`을 쓴다 (`src/locale.js`의 국가 기반 추정 로직은 더 이상
+  호출하지 않는다 — 이후 실제로 다국어가 필요해지면 그 파일을 다시 연결하면 된다).
+
+**이미 동기화된 계정은 한 번 더 "새로고침"을 눌러야 한다** — DB에 캐시된 업적 텍스트가
+지난 동기화 때 받은 언어(국가 추정) 그대로 남아있기 때문에, 새로 영어로 다시 받아오려면
+재동기화가 필요하다.
 
 **스키마 변경**: `User.locCountryCode String?` 컬럼이 추가됐다. 이 저장소는 아직
 `prisma/migrations` 폴더 없이 스키마 파일만으로 관리하고 있어서, `start` 스크립트가
@@ -146,6 +148,40 @@ CSS는 데모(`trophion.html`)의 CSS를 그대로 가져오고 데이터 소스
   (`hashHue`/`onCoverError`/`wireCoverFallbacks`).
 - 우측 상단 유저네임 버튼 클릭 시 바로 로그아웃되던 것 → "로그아웃 하시겠습니까?"
   확인 모달("예"/"아니오") 경유하도록 변경.
+
+## 이번 라운드에 반영된 수정 (다운로드 이미지 / 트로피 비주얼 / 배경 / 커버 이미지)
+
+- **Steam 로그인 검증 실패 버그**: Express의 쿼리 파서가 `openid.sig` 등 base64 값에 들어있는
+  리터럴 `+`를 스페이스로 뭉개버려서 서명 검증이 항상 실패했다. `src/steamAuth.js`가 이제
+  `req.query`가 아니라 원본 쿼리스트링을 직접(그리고 `+`는 건드리지 않고) 파싱한다
+  (`parseRawOpenIdQuery`). `src/routes/auth.js`도 그에 맞춰 `req.url`에서 원본 쿼리스트링을
+  뽑아서 넘기도록 수정.
+- **"이미지 다운로드" 버튼이 텍스트 없이 트로피만 나오던 문제**: 원인은 Railway 같은 최소
+  컨테이너에 시스템 폰트가 하나도 없어서 `@napi-rs/canvas`가 도형(트로피 패스)은 정상적으로
+  그리면서 `ctx.fillText`만 조용히 아무것도 안 그렸던 것. `fonts/DejaVuSans.ttf`,
+  `fonts/DejaVuSans-Bold.ttf`를 리포에 직접 번들하고 `src/shareCard.js`가 시작 시
+  `GlobalFonts.registerFromPath()`로 등록해서 어떤 배포 환경에서도 텍스트가 확실히 나오게
+  했다.
+- **다운로드 이미지가 화면과 다르게 나오던 문제**: `src/shareCard.js`를 완전히 다시 그려서
+  화면의 트로피 카드(TROPHION 로고, 게임명, 트로피 3개 + 이름/희귀도 텍스트, 배경 이미지)와
+  동일한 내용이 PNG에도 전부 들어가게 했다.
+- **트로피 모양을 더 뚱뚱하고 화려하게**: 헤더 로고의 트로피 실루엣(볼+손잡이 2개+별+기둥+
+  받침대) 정체성은 유지하면서, 넓고 둥근 벌브형 볼, 장식용 상단 림밴드, 메달리온 링+별,
+  어깨 반짝이 포인트, 2단 받침대로 업그레이드했다. 화면(`bigTrophySvg()`,
+  `public/index.html`)과 다운로드 이미지(`drawTrophy()`, `src/shareCard.js`)가 같은 문법으로
+  그려져서 둘이 시각적으로 일치한다. 트로피 크기도 키움(골드 168→210px 등).
+- **트로피 카드 배경에 게임 커버 이미지 오버랩**: 화면의 `.tpl-card`에 해당 게임의 커버
+  이미지를 낮은 불투명도(약 28%)로 깔고 그 위에 어두운 그라데이션(`tpl-bg-shade`)을 덮어서
+  트로피/텍스트 가독성은 유지했다. 게임을 바꾸면 배경도 같이 바뀐다(`renderTplBg()`).
+  다운로드 PNG도 서버에서 동일한 커버 이미지를 받아와 같은 방식으로 그린다.
+- **좌측 상단 `@유저네임` 제거**: 트로피 카드 상단엔 이제 TROPHION 로고만 남는다(화면·PNG
+  둘 다).
+- **커버 이미지 없는 게임(예: 아직 출시 전인 신작 등) 재확인**: `header.jpg`가 없는 appid도
+  있어서(베타/플레이테스트 전용 appid, 캐시 반영 지연 등), `steamCoverUrlCandidates()`가
+  `header.jpg → capsule_616x353.jpg → library_header.jpg → …` 순서로 후보 URL을 주고,
+  화면의 `<img>`가 로드 실패할 때마다 다음 후보로 자동 재시도한 뒤 그래도 다 실패하면
+  이니셜 박스로 대체한다. 완전히 새 게임이라 Steam CDN에 이미지 자체가 없는 경우는 이
+  방식으로도 못 살리니, 계속 안 뜨는 게임이 있으면 appid를 알려주면 확인해보겠다.
 
 ## 다음으로 손볼만한 것들
 
