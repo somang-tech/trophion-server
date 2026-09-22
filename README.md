@@ -69,12 +69,20 @@ npm run dev                          # http://localhost:3000
 가짜 `GAMES` 배열이 없다. 시작하자마자 `GET /auth/me`로 로그인 여부를 확인하고:
 
 - 로그인 안 됨 → "Steam으로 로그인" 게이트 화면(비공개 프로필 안내 포함)
-- 로그인 됨 → `GET /api/games`로 사이드바를 그리고, 게임 클릭 시
-  `GET /api/games/:appId/achievements` + `GET /api/trophies?appId=`를 같이 불러 대시보드를 그림
+- 로그인 됨 → `GET /api/games` + `GET /api/games/stats`로 상단 통계·히어로를 채우고, 게임
+  클릭 시 `GET /api/games/:appId/achievements` + `GET /api/trophies?appId=`를 같이 불러
+  대시보드를 그림
 - ★ 클릭 → `POST /api/trophies`, 픽 제거 → `DELETE /api/trophies?appId=&slot=`
-- 게임 커버는 `game.coverUrl`(Steam CDN), 업적 아이콘은 `achievement.iconUrl`(Steam이 주는
-  진짜 아이콘)을 그대로 `<img>`로 렌더링 — Claude 아티팩트 데모와 달리 여긴 일반 웹페이지라
-  외부 이미지 로드에 제약이 없다.
+- 게임 커버는 `game.coverUrl`(Steam CDN)을 `<img>`로 렌더링 — Claude 아티팩트 데모와 달리
+  여긴 일반 웹페이지라 외부 이미지 로드에 제약이 없다.
+
+**아티팩트 데모와 시각적으로 완전히 동일하게** 맞췄다: 로고(브랜드 마크 SVG + Bebas Neue
+그라데이션), 헤더의 Games/Trophies/Rarity Score 통계, 사이드바 "내 게임 랭킹 · 달성도순" +
+개수, 금/은/동 트로피 템플릿(비스듬한 메달), "획득한 업적 메달" 랙까지 전부 포함되어 있다.
+CSS는 데모(`trophion.html`)의 CSS를 그대로 가져오고 데이터 소스만 실제 API로 바꾼 것이라,
+둘을 비교하면서 디자인을 더 맞춰나가기도 쉽다.
+`GET /api/games/stats`(신규 엔드포인트)가 "완벽 클리어/총 업적 수/평균 희귀도"를 서버에서
+집계해서 준다 — 클라이언트에서 게임마다 업적을 다 훑지 않아도 되게 하기 위함.
 
 ## 비공개 프로필 처리
 

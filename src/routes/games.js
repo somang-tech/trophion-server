@@ -143,6 +143,30 @@ gamesRouter.get('/', requireAuth, async (req, res) => {
   res.json({ games: games.map((g) => ({ ...g, coverUrl: steamCoverUrl(g.appId) })) });
 });
 
+// 헤더/히어로에 쓰는 집계 — GameCache만으로는 "평균 희귀도"를 못 구해서
+// (업적 단위 globalPct 평균이 필요함) AchievementCache까지 조인해서 계산한다.
+gamesRouter.get('/stats', requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const games = await prisma.gameCache.findMany({ where: { userId } });
+  const unlockedAch = await prisma.achievementCache.findMany({
+    where: { unlocked: true, game: { userId } },
+    select: { globalPct: true }
+  });
+
+  const perfectGames = games.filter((g) => g.achTotal > 0 && g.achDone === g.achTotal).length;
+  const avgRarity = unlockedAch.length
+    ? unlockedAch.reduce((s, a) => s + a.globalPct, 0) / unlockedAch.length
+    : 0;
+
+  res.json({
+    games: games.length,
+    totalTrophies: games.reduce((s, g) => s + g.achDone, 0),
+    rarityScore: games.reduce((s, g) => s + g.rarityScore, 0),
+    perfectGames,
+    avgRarity: Math.round(avgRarity * 10) / 10
+  });
+});
+
 // 특정 게임의 업적 목록 — 오른쪽 대시보드가 게임 클릭 시 이 엔드포인트를 부른다.
 gamesRouter.get('/:appId/achievements', requireAuth, async (req, res) => {
   const appId = Number(req.params.appId);

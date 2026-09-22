@@ -61,6 +61,7 @@ authRouter.get('/me', async (req, res) => {
       steamId64: user.steamId64,
       displayName: user.displayName,
       avatarUrl: user.avatarUrl,
+      profileUrl: user.profileUrl,
       lastSyncAt: user.lastSyncAt
     }
   });
