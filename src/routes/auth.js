@@ -13,7 +13,11 @@ authRouter.get('/steam', (req, res) => {
 
 authRouter.get('/steam/callback', async (req, res) => {
   try {
-    const steamId64 = await verifyCallback(req.query);
+    // req.query가 아니라 원본 쿼리스트링을 그대로 넘긴다 — 이유는 steamAuth.js의
+    // parseRawOpenIdQuery 주석 참고 ("+"가 스페이스로 뭉개지는 문제 방지).
+    const qIndex = req.url.indexOf('?');
+    const rawQueryString = qIndex >= 0 ? req.url.slice(qIndex + 1) : '';
+    const steamId64 = await verifyCallback(rawQueryString);
     if (!steamId64) {
       return res.status(401).send('Steam 로그인 검증에 실패했습니다. 다시 시도해주세요.');
     }
